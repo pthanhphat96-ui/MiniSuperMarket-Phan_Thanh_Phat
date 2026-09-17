@@ -1,23 +1,4 @@
-PHẦN 1: HƯỚNG DẪN NHANH ĐẨY CODE LÊN GITHUB (Dành cho sinh viên)
-Mở Git Bash (hoặc Terminal trong Visual Studio) tại thư mục chứa Solution của bạn và chạy lần lượt các lệnh sau:
 
-Khởi tạo kho lưu trữ Git cục bộ:
-git init
-Thêm toàn bộ tệp tin vào vùng chờ:
-git add .
-Lưu lịch sử thay đổi (Commit):
-git commit -m "Hoàn thành bài thực hành Buổi 1: CRUD Nhóm hàng MiniSupermarket"
-Đổi tên nhánh chính thành main:
-git branch -M main
-Liên kết với kho lưu trữ trên GitHub của bạn (thay URL bằng link repo của bạn):
-git remote add origin https://github.com/TEN_TAI_KHOAN/MiniSupermarket-Session1.git
-Đẩy code lên GitHub:
-git push -u origin main
-
-PHẦN 2: MẪU TỆP README.md ĐỂ TẠO TRANG CHỦ GITHUB REPOSITORY
-Bạn hãy tạo một tệp tên là README.md ở thư mục gốc của Solution và dán nội dung sau vào:
-
-Markdown
 # 🛒 HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI (MINISUPERMARKET SYSTEM)
 > **Môn học:** Lập trình Ứng dụng .NET Core (Mã môn: 229162)  
 > **Buổi thực hành:** Buổi 1 - Xây dựng Web API quản lý danh mục và kết nối WinForms Client (CRUD)
