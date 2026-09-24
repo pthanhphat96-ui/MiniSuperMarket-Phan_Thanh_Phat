@@ -347,7 +347,6 @@
             this.StartPosition = FormStartPosition.CenterScreen;
             this.Text = "Quản lý Danh mục Nhóm hàng - FormCategoryManagement";
 
-            this.Load += new EventHandler(this.FormCategoryManagement_Load);
 
             this.grpSearch.ResumeLayout(false);
             this.grpSearch.PerformLayout();
