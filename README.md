@@ -1,61 +1,12 @@
-
-# 🛒 HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI (MINISUPERMARKET SYSTEM)
-> **Môn học:** Lập trình Ứng dụng .NET Core (Mã môn: 229162)  
-> **Buổi thực hành:** Buổi 1 - Xây dựng Web API quản lý danh mục và kết nối WinForms Client (CRUD)
-
----
-
-## 🏗️ 1. Mô hình Kiến trúc Hệ thống (Client - Server)
-Dự án được xây dựng theo mô hình phân tầng hiện đại, tách biệt hoàn toàn giữa Backend và Frontend:
-* **`MiniSupermarket.API` (Backend):** Dự án ASP.NET Core Web API chịu trách nhiệm xử lý logic nghiệp vụ, quản lý dữ liệu và cung cấp các RESTful API chuẩn hóa.
-* **`MiniSupermarket.WinForms` (Frontend Client):** Ứng dụng Windows Forms đóng vai trò là máy trạm POS tại quầy, sử dụng `HttpClient` để gọi dữ liệu từ API qua mạng và hiển thị trực quan lên `DataGridView`.
-
----
-
-## 🛠️ 2. Công nghệ Sử dụng
-* **Ngôn ngữ:** C# (.NET 8.0)
-* **Backend:** ASP.NET Core Web API, Controllers, In-Memory Data, LINQ
-* **Frontend:** Windows Forms (.NET 8.0), `System.Net.Http.Json`
-* **Công cụ kiểm thử:** Swagger UI
-
----
-
-## 📂 3. Cấu trúc Solution
-```text
-MiniSupermarketSystem/
+🛒 HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI (MINISUPERMARKET SYSTEM)Môn học: Lập trình Ứng dụng .NET Core (Mã môn: 229162)Tiến độ:  Buổi 2 (Bảo mật & Phân quyền JWT cho Web API)🏗️ 1. Mô hình Kiến trúc Hệ thống (Client - Server)Dự án được xây dựng theo mô hình phân tầng hiện đại, tách biệt hoàn toàn giữa Backend và Frontend:MiniSupermarket.API (Backend): Dự án ASP.NET Core Web API chịu trách nhiệm xử lý logic nghiệp vụ, quản lý dữ liệu, cung cấp các RESTful API chuẩn hóa và áp dụng cơ chế bảo mật JWT Stateless.   MiniSupermarket.WinForms (Frontend Client): Ứng dụng Windows Forms đóng vai trò là máy trạm tại quầy, tích hợp màn hình đăng nhập, quản lý phiên làm việc (SessionManager) và tự động đính kèm Bearer Token vào HttpClient để gọi dữ liệu an toàn từ API.   🛠️ 2. Công nghệ Sử dụngNgôn ngữ: C# (.NET 8.0)   Backend: ASP.NET Core Web API, Controllers, In-Memory Data, LINQ, JWT Authentication (Microsoft.AspNetCore.Authentication.JwtBearer, System.IdentityModel.Tokens.Jwt)   Frontend: Windows Forms (.NET 8.0), System.Net.Http.Json, JsonDocument   Công cụ kiểm thử: Swagger UI (hỗ trợ xác thực khóa Bearer)   📂 3. Cấu trúc SolutionPlaintextMiniSupermarketSystem/
 │
 ├── MiniSupermarket.API/          # Dự án Web API (Backend)
-│   ├── Controllers/              # Chứa CategoriesController (CRUD & Search)
-│   ├── Models/                   # Chứa lớp thực thể Category.cs
-│   └── Program.cs                # Cấu hình dịch vụ và Middleware
+│   ├── Controllers/              # Chứa AuthController và CategoriesController (CRUD & Phân quyền)
+│   ├── Models/                   # Chứa lớp thực thể Category.cs và LoginRequestDto
+│   └── Program.cs                # Cấu hình dịch vụ, Middleware xác thực JWT và phân quyền
 │
 └── MiniSupermarket.WinForms/     # Dự án Windows Forms (Frontend Client)
-    └── FormCategoryManagement.cs # Giao diện quản lý danh mục CRUD
-
-
-🚀 4. Hướng dẫn Chạy và Kiểm thử Dự án
-Bước 1: Chạy phía Backend (Web API)
-Mở Solution bằng Visual Studio 2022.
-
-
-Nhấp chuột phải vào project MiniSupermarket.API chọn Set as Startup Project.
-
-
-Nhấn F5 để chạy. Trình duyệt sẽ tự động mở giao diện Swagger UI để kiểm tra các phương thức GET, POST, PUT, DELETE.
-
-
-Bước 2: Chạy phía Frontend (WinForms Client)
-Đảm bảo cổng (Port) trong ApiClientService hoặc HttpClient của WinForms khớp với cổng https://localhost:XXXXX của Web API đang chạy.
-
-Nhấp chuột phải vào project MiniSupermarket.WinForms chọn Debug -> Start new instance.
-
-Thử nghiệm các chức năng: Tải danh sách, Thêm mới, Sửa, Xóa và Tìm kiếm nhóm hàng.
-
-👨‍💻 5. Tác giả
-Họ tên sinh viên: Phan Thanh Phát
-
-
-Mã sinh viên: 2124110118
-
-
-Lớp học phần: CCQ2411D
+    ├── FormLogin.cs              # Giao diện đăng nhập hệ thống
+    ├── FormCategoryManagement.cs # Giao diện quản lý danh mục (CRUD theo phân quyền)
+    └── SessionManager.cs         # Lớp tĩnh lưu trữ Token và Vai trò người dùng (Admin/Cashier)
+🚀 4. Hướng dẫn Chạy và Kiểm thử Dự ánBước 1: Khởi chạy Backend (Web API)Mở Solution bằng Visual Studio 2022.   Nhấp chuột phải vào project MiniSupermarket.API chọn Set as Startup Project.   Nhấn F5 để chạy. Trình duyệt sẽ tự động mở giao diện Swagger UI.   Bước 2: Kiểm chứng Bảo mật JWT trên Swagger UIChưa đăng nhập: Thử gọi GET /api/categories mà không có Token, hệ thống sẽ trả về mã lỗi 401 Unauthorized.   Đăng nhập lấy Token: Gọi endpoint POST /api/auth/login với tài khoản mẫu:Admin: admin / 123456 (Toàn quyền quản trị)   Cashier: cashier / 123456 (Chỉ dùng màn hình POS)   Xác thực trên Swagger: Copy chuỗi token nhận được, bấm vào nút Authorize ở góc phải trên cùng Swagger, nhập định dạng Bearer <token> để kiểm tra quyền hạn trên các endpoint admin-dashboard và staff-pos.   Bước 3: Chạy phía Frontend (WinForms Client)Đảm bảo cổng (Port) trong ApiClientService hoặc HttpClient của WinForms khớp với cổng https://localhost:XXXXX của Web API đang chạy.   Nhấp chuột phải vào project MiniSupermarket.WinForms chọn Debug -> Start new instance. Ứng dụng sẽ khởi chạy từ màn hình FormLogin.   Đăng nhập bằng tài khoản Admin hoặc Cashier để hệ thống phân quyền giao diện (ẩn/hiện các nút Thêm, Sửa, Xóa) và tự động đính kèm Bearer Token trong mỗi lần gọi dữ liệu qua API.   👨‍💻 5. Tác giảHọ tên sinh viên: Phan Thanh Phát   Mã sinh viên: 2124110118   Lớp học phần: CCQ2411D   
