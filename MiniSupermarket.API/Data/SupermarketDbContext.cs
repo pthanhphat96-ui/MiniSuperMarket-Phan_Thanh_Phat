@@ -59,21 +59,22 @@ namespace MiniSupermarket.API.Data
             // ==========================================
 
             modelBuilder.Entity<Customer>().HasData(
-                new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
-                new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
-                new Customer { CustomerId = 3, CustomerName = "Lê Văn C", PhoneNumber = "0983344556", Address = "Quận 5, TP.HCM", RewardPoints = 100, MembershipRank = "Chuẩn" },
-                new Customer { CustomerId = 4, CustomerName = "Phạm Thị D", PhoneNumber = "0905678123", Address = "Quận 10, TP.HCM", RewardPoints = 2300, MembershipRank = "Vàng" },
-                new Customer { CustomerId = 5, CustomerName = "Hoàng Văn E", PhoneNumber = "0912345678", Address = "Quận Bình Thạnh, TP.HCM", RewardPoints = 800, MembershipRank = "Bạc" },
-                new Customer { CustomerId = 6, CustomerName = "Võ Thị F", PhoneNumber = "0987654321", Address = "Quận Gò Vấp, TP.HCM", RewardPoints = 3200, MembershipRank = "Kim Cương" },
-                new Customer { CustomerId = 7, CustomerName = "Đặng Văn G", PhoneNumber = "0909876543", Address = "Quận Tân Bình, TP.HCM", RewardPoints = 250, MembershipRank = "Chuẩn" },
-                new Customer { CustomerId = 8, CustomerName = "Bùi Thị H", PhoneNumber = "0913456789", Address = "Quận Phú Nhuận, TP.HCM", RewardPoints = 1200, MembershipRank = "Bạc" },
-                new Customer { CustomerId = 9, CustomerName = "Đỗ Văn I", PhoneNumber = "0981234567", Address = "Quận 7, TP.HCM", RewardPoints = 4500, MembershipRank = "Kim Cương" },
-                new Customer { CustomerId = 10, CustomerName = "Nguyễn Thị K", PhoneNumber = "0903456789", Address = "Quận 6, TP.HCM", RewardPoints = 150, MembershipRank = "Chuẩn" },
-                new Customer { CustomerId = 11, CustomerName = "Trương Văn L", PhoneNumber = "0915678901", Address = "TP. Thủ Đức, TP.HCM", RewardPoints = 1800, MembershipRank = "Vàng" },
-                new Customer { CustomerId = 12, CustomerName = "Phan Thị M", PhoneNumber = "0986789012", Address = "Quận 12, TP.HCM", RewardPoints = 700, MembershipRank = "Bạc" },
-                new Customer { CustomerId = 13, CustomerName = "Lý Văn N", PhoneNumber = "0907890123", Address = "Quận Tân Phú, TP.HCM", RewardPoints = 5000, MembershipRank = "Kim Cương" },
-                new Customer { CustomerId = 14, CustomerName = "Huỳnh Thị P", PhoneNumber = "0918901234", Address = "Quận Bình Tân, TP.HCM", RewardPoints = 350, MembershipRank = "Chuẩn" },
-                new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
+       new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "25 Nguyễn Huệ, Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
+new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "118 Võ Văn Tần, Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
+new Customer { CustomerId = 3, CustomerName = "Lê Văn C", PhoneNumber = "0983344556", Address = "72 Nguyễn Trãi, Quận 5, TP.HCM", RewardPoints = 100, MembershipRank = "Chuẩn" },
+new Customer { CustomerId = 4, CustomerName = "Phạm Thị D", PhoneNumber = "0905678123", Address = "156 Thành Thái, Quận 10, TP.HCM", RewardPoints = 2300, MembershipRank = "Vàng" },
+new Customer { CustomerId = 5, CustomerName = "Hoàng Văn E", PhoneNumber = "0912345678", Address = "43 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM", RewardPoints = 800, MembershipRank = "Bạc" },
+new Customer { CustomerId = 6, CustomerName = "Võ Thị F", PhoneNumber = "0987654321", Address = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM", RewardPoints = 3200, MembershipRank = "Kim Cương" },
+new Customer { CustomerId = 7, CustomerName = "Đặng Văn G", PhoneNumber = "0909876543", Address = "215 Cộng Hòa, Quận Tân Bình, TP.HCM", RewardPoints = 250, MembershipRank = "Chuẩn" },
+new Customer { CustomerId = 8, CustomerName = "Bùi Thị H", PhoneNumber = "0913456789", Address = "36 Phan Đình Phùng, Quận Phú Nhuận, TP.HCM", RewardPoints = 1200, MembershipRank = "Bạc" },
+new Customer { CustomerId = 9, CustomerName = "Đỗ Văn I", PhoneNumber = "0981234567", Address = "102 Nguyễn Thị Thập, Quận 7, TP.HCM", RewardPoints = 4500, MembershipRank = "Kim Cương" },
+new Customer { CustomerId = 10, CustomerName = "Nguyễn Thị K", PhoneNumber = "0903456789", Address = "68 Hậu Giang, Quận 6, TP.HCM", RewardPoints = 150, MembershipRank = "Chuẩn" },
+new Customer { CustomerId = 11, CustomerName = "Trương Văn L", PhoneNumber = "0915678901", Address = "145 Võ Văn Ngân, TP. Thủ Đức, TP.HCM", RewardPoints = 1800, MembershipRank = "Vàng" },
+new Customer { CustomerId = 12, CustomerName = "Phan Thị M", PhoneNumber = "0986789012", Address = "234 Lê Văn Khương, Quận 12, TP.HCM", RewardPoints = 700, MembershipRank = "Bạc" },
+new Customer { CustomerId = 13, CustomerName = "Lý Văn N", PhoneNumber = "0907890123", Address = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM", RewardPoints = 5000, MembershipRank = "Kim Cương" },
+new Customer { CustomerId = 14, CustomerName = "Huỳnh Thị P", PhoneNumber = "0918901234", Address = "321 Tỉnh Lộ 10, Quận Bình Tân, TP.HCM", RewardPoints = 350, MembershipRank = "Chuẩn" },
+new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
+
             );
 
 

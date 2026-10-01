@@ -52,9 +52,19 @@ namespace MiniSupermarket.WinForms
                     FormCustomerManagement frmCustomer = new FormCustomerManagement();
 
                     this.Hide(); // Ẩn màn hình đăng nhập
-                    frmCustomer.ShowDialog(); // Hiển thị màn hình Khách hàng (ShowDialog để tạm dừng code ở đây chờ người dùng dùng xong)
+                    frmCustomer.Show(); // Hiển thị màn hình Khách hàng (ShowDialog để tạm dừng code ở đây chờ người dùng dùng xong)
 
-                    this.Close(); // Đóng hẳn ứng dụng (tắt luôn FormLogin đang ẩn) khi người dùng tắt màn hình Khách hàng
+                    //this.Close(); // Đóng hẳn ứng dụng (tắt luôn FormLogin đang ẩn) khi người dùng tắt màn hình Khách hàng
+
+                    // Mở Form quản lý Khách hàng và ẩn Form đăng nhập đi
+                    FormCategoryManagement frmCategory = new FormCategoryManagement();
+
+                    //this.Hide(); // Ẩn màn hình đăng nhập
+                    frmCategory.Show(); // Hiển thị màn hình Khách hàng (ShowDialog để tạm dừng code ở đây chờ người dùng dùng xong)
+
+                    //this.Close(); // Đóng hẳn ứng dụng (tắt luôn FormLogin đang ẩn) khi người dùng tắt màn hình Khách hàng
+
+
                 }
                 else
                 {
