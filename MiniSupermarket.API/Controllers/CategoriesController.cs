@@ -1,120 +1,213 @@
-﻿
-using MiniSupermarket.API.Models;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MiniSupermarket.API.Data;
+using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Bắt buộc phải có Token mới gọi được các API trong Controller này
+    [Authorize] // Phải có JWT Token mới được gọi API
     public class CategoriesController : ControllerBase
     {
+        private readonly SupermarketDbContext _context;
 
-        // Dữ liệu mẫu lưu tạm trên bộ nhớ RAM (In-Memory) phục vụ kiểm thử khi chưa có Database
-        private static readonly List<Category> _categories = new() {
-            new Category { CategoryId = 1, CategoryName = "Bánh kẹo & Đồ ăn vặt", Description = "Snack, bánh quy, kẹo dẻo" },
-            new Category { CategoryId = 2, CategoryName = "Nước giải khát & Trà", Description = "Nước ngọt, nước khoáng, trà" },
-            new Category { CategoryId = 3, CategoryName = "Sữa & Sản phẩm từ sữa", Description = "Sữa tươi, sữa chua, phô mai" },
-            new Category { CategoryId = 4, CategoryName = "Mì gói & Thực phẩm ăn liền", Description = "Mì ăn liền, phở khô, cháo gói" },
-            new Category { CategoryId = 5, CategoryName = "Gia vị & Dầu ăn", Description = "Nước mắm, hạt nêm, dầu thực vật" }
-        };
+        // Tiêm DbContext thông qua Constructor Injection
+        public CategoriesController(SupermarketDbContext context)
+        {
+            _context = context;
+        }
 
-        // 1. READ: Lấy toàn bộ danh sách nhóm hàng (GET /api/categories)
+        // =========================================================
+        // 1. READ: Lấy toàn bộ danh mục từ SQL Server
+        // GET: /api/categories
+        // =========================================================
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            // Trả về mã 200 OK kèm theo danh sách JSON
-            return Ok(_categories);
+            var list = await _context.Categories
+                .AsNoTracking()
+                .ToListAsync();
+
+            return Ok(list);
         }
 
-        // 2. READ: Lấy chi tiết một nhóm hàng theo ID (GET /api/categories/{id})
+        // =========================================================
+        // 2. READ: Lấy chi tiết danh mục theo ID
+        // GET: /api/categories/1
+        // =========================================================
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var cat = _categories.FirstOrDefault(c => c.CategoryId == id);
-            if (cat == null)
+            var category = await _context.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.CategoryId == id);
+
+            if (category == null)
             {
-                // Trả về mã lỗi 404 nếu không tìm thấy ID tương ứng
-                return NotFound(new { message = "Không tìm thấy nhóm hàng!" });
+                return NotFound(new
+                {
+                    message = "Không tìm thấy nhóm hàng trong CSDL!"
+                });
             }
-            return Ok(cat);
+
+            return Ok(category);
         }
 
-        // 3. SEARCH: Tìm kiếm nhóm hàng theo từ khóa qua Query String (GET /api/categories/search?keyword=...)
+        // =========================================================
+        // 3. SEARCH: Tìm kiếm danh mục
+        // GET: /api/categories/search?keyword=bánh
+        // =========================================================
         [HttpGet("search")]
-        public IActionResult Search([FromQuery] string keyword)
+        public async Task<IActionResult> Search([FromQuery] string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
-                return BadRequest(new { message = "Vui lòng nhập từ khóa!" });
+                return BadRequest(new
+                {
+                    message = "Vui lòng nhập từ khóa tìm kiếm!"
+                });
             }
-            // Lọc danh sách theo tên chứa từ khóa (không phân biệt chữ hoa/thường)
-            var result = _categories
-                .Where(c => c.CategoryName.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+
+            // EF Core sẽ dịch LINQ thành SQL tương ứng
+            var result = await _context.Categories
+                .AsNoTracking()
+                .Where(c => c.CategoryName.Contains(keyword))
+                .ToListAsync();
+
             return Ok(result);
         }
 
-        // 4. CREATE: Thêm mới nhóm hàng (POST /api/categories)
+        // =========================================================
+        // 4. CREATE: Thêm mới danh mục
+        // POST: /api/categories
+        // =========================================================
         [HttpPost]
-        public IActionResult Create([FromBody] Category newCat)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Create([FromBody] Category newCat)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             if (string.IsNullOrWhiteSpace(newCat.CategoryName))
             {
-                return BadRequest(new { message = "Tên không được trống!" });
+                return BadRequest(new
+                {
+                    message = "Tên nhóm hàng không được để trống!"
+                });
             }
-            // Tự động tăng ID tiếp theo
-            newCat.CategoryId = _categories.Count > 0 ? _categories.Max(c => c.CategoryId) + 1 : 1;
-            _categories.Add(newCat);
 
-            // Trả về mã 201 Created kèm đường dẫn dẫn tới bản ghi mới tạo
-            return CreatedAtAction(nameof(GetById), new { id = newCat.CategoryId }, newCat);
+            _context.Categories.Add(newCat);
+
+            // Lưu dữ liệu vào SQL Server
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { id = newCat.CategoryId },
+                newCat
+            );
         }
 
-        // 5. UPDATE: Cập nhật thông tin nhóm hàng (PUT /api/categories/{id})
+        // =========================================================
+        // 5. UPDATE: Cập nhật danh mục
+        // PUT: /api/categories/1
+        // =========================================================
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Category updateCat)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(
+            int id,
+            [FromBody] Category updateCat)
         {
-            var cat = _categories.FirstOrDefault(c => c.CategoryId == id);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var cat = await _context.Categories.FindAsync(id);
+
             if (cat == null)
             {
-                return NotFound(new { message = "Không tìm thấy nhóm hàng cần sửa!" });
+                return NotFound(new
+                {
+                    message = "Không tìm thấy nhóm hàng cần sửa!"
+                });
             }
-            // Cập nhật giá trị mới
+
+            if (string.IsNullOrWhiteSpace(updateCat.CategoryName))
+            {
+                return BadRequest(new
+                {
+                    message = "Tên nhóm hàng không được để trống!"
+                });
+            }
+
             cat.CategoryName = updateCat.CategoryName;
             cat.Description = updateCat.Description;
 
-            // Trả về mã 204 NoContent biểu thị cập nhật thành công nhưng không cần trả về dữ liệu mới
+            // Lưu thay đổi vào SQL Server
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
 
-        // 6. DELETE: Xóa nhóm hàng theo ID (DELETE /api/categories/{id})
+        // =========================================================
+        // 6. DELETE: Xóa danh mục
+        // DELETE: /api/categories/1
+        // =========================================================
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var cat = _categories.FirstOrDefault(c => c.CategoryId == id);
+            var cat = await _context.Categories.FindAsync(id);
+
             if (cat == null)
             {
-                return NotFound(new { message = "Không tìm thấy nhóm hàng cần xóa!" });
+                return NotFound(new
+                {
+                    message = "Không tìm thấy nhóm hàng cần xóa!"
+                });
             }
-            _categories.Remove(cat);
+
+            _context.Categories.Remove(cat);
+
+            // Lưu thay đổi vào SQL Server
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
+
+        // =========================================================
+        // 7. ADMIN DASHBOARD
+        // GET: /api/categories/admin-dashboard
+        // Chỉ Admin được truy cập
+        // =========================================================
         [HttpGet("admin-dashboard")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetAdminDashboard()
         {
-            return Ok(new { message = "Chào mừng Admin! Bạn có toàn quyền quản trị hệ thống siêu thị mini." });
+            return Ok(new
+            {
+                message = "Chào mừng Admin! Bạn có toàn quyền quản trị hệ thống siêu thị mini."
+            });
         }
 
-        // 5. Kiểm tra quyền chung cho nhân viên (Cả Admin và Cashier đều gọi được)
+        // =========================================================
+        // 8. STAFF POS
+        // GET: /api/categories/staff-pos
+        // Admin và Cashier đều được truy cập
+        // =========================================================
         [HttpGet("staff-pos")]
         [Authorize(Roles = "Admin,Cashier")]
         public IActionResult GetStaffPos()
         {
-            return Ok(new { message = "Màn hình POS Thu ngân sẵn sàng phục vụ bán hàng." });
+            return Ok(new
+            {
+                message = "Màn hình POS Thu ngân sẵn sàng phục vụ bán hàng."
+            });
         }
-
     }
 }

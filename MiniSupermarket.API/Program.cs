@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MiniSupermarket.API.Data;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ========================================
 // Cấu hình JWT
+// ========================================
 var jwtSecret = builder.Configuration["JwtSettings:Secret"]
     ?? "SupermarketSecretKeyDoAnMonHoc2026SecureString!!";
 
@@ -29,10 +33,26 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
+// ========================================
+// Đăng ký DbContext
+// ========================================
+
+// Lấy chuỗi kết nối từ appsettings.json
+var connectionString = builder.Configuration
+    .GetConnectionString("DefaultConnection");
+
+// Đăng ký SupermarketDbContext sử dụng SQL Server
+builder.Services.AddDbContext<SupermarketDbContext>(options =>
+    options.UseSqlServer(connectionString));
+
+// ========================================
+// Controllers + Swagger
+// ========================================
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// ⭐ Cấu hình Swagger JWT
+// Cấu hình Swagger JWT
 builder.Services.AddSwaggerGen(options =>
 {
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -62,6 +82,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// ========================================
+// Middleware
+// ========================================
 
 if (app.Environment.IsDevelopment())
 {
