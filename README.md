@@ -1,52 +1,83 @@
+🛒 HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI (MINISUPERMARKET SYSTEM)
+Môn học: Lập trình Ứng dụng .NET Core (Mã môn: 229162)
 
-# 🛒 HỆ THỐNG QUẢN LÝ SIÊU THỊ MINI (MINISUPERMARKET SYSTEM)
-> **Môn học:** Lập trình Ứng dụng .NET Core (Mã môn: 229162)  
-> **Buổi thực hành:** Buổi 2 (Bảo mật & Phân quyền JWT cho Web API)
+Buổi thực hành: Buổi 3 (Tích hợp SQL Server & Entity Framework Core Code-First)
 
----
+🏗️ 1. Mô hình Kiến trúc Hệ thống (Client - Server - Database)
+Dự án được nâng cấp từ lưu trữ tạm thời (In-Memory) lên cơ sở dữ liệu quan hệ thực tế, đảm bảo tính bền vững của dữ liệu:
 
-## 🏗️ 1. Mô hình Kiến trúc Hệ thống (Client - Server)
-Dự án được xây dựng theo mô hình phân tầng hiện đại, tách biệt hoàn toàn giữa Backend và Frontend:
-* **`MiniSupermarket.API` (Backend):** Dự án ASP.NET Core Web API chịu trách nhiệm xử lý logic nghiệp vụ, quản lý dữ liệu và cung cấp các RESTful API chuẩn hóa.
-* **`MiniSupermarket.WinForms` (Frontend Client):** Ứng dụng Windows Forms đóng vai trò là máy trạm POS tại quầy, sử dụng `HttpClient` để gọi dữ liệu từ API qua mạng và hiển thị trực quan lên `DataGridView`.
+Microsoft SQL Server (Database): Nơi lưu trữ vĩnh viễn dữ liệu của hệ thống (Danh mục, Sản phẩm, Khách hàng, Tài khoản...).
 
----
+MiniSupermarket.API (Backend): Dự án ASP.NET Core Web API đóng vai trò trung gian. Sử dụng Entity Framework Core (EF Core) theo chuẩn Code-First để tự động sinh cơ sở dữ liệu từ mã C# và xử lý các thao tác CRUD bất đồng bộ (Async/Await) thông qua LINQ.
 
-## 🛠️ 2. Công nghệ Sử dụng
-* **Ngôn ngữ:** C# (.NET 8.0)
-* **Backend:** ASP.NET Core Web API, Controllers, In-Memory Data, LINQ
-* **Frontend:** Windows Forms (.NET 8.0), `System.Net.Http.Json`
-* **Công cụ kiểm thử:** Swagger UI
+MiniSupermarket.WinForms (Frontend Client): Ứng dụng Windows Forms (máy trạm POS/Admin), gọi API qua HttpClient kèm theo JWT Token và hiển thị trực quan lên DataGridView.
 
----
+🛠️ 2. Công nghệ Sử dụng
+Ngôn ngữ: C# (.NET 8.0)
 
-## 📂 3. Cấu trúc Solution
-```text
+Cơ sở dữ liệu: Microsoft SQL Server
+
+ORM (Object-Relational Mapping): Entity Framework Core 8.0 (Code-First, Migrations, Data Seeding)
+
+Backend: ASP.NET Core Web API, Async/Await, LINQ to Entities, Dependency Injection
+
+Frontend: Windows Forms (.NET 8.0), System.Net.Http.Json
+
+Công cụ: Visual Studio 2022, SQL Server Management Studio (SSMS), Swagger UI
+
+📂 3. Cấu trúc Solution Cập nhật (Buổi 3)
+Plaintext
 MiniSupermarketSystem/
 │
 ├── MiniSupermarket.API/          # Dự án Web API (Backend)
-│   ├── Controllers/              # Chứa AuthController và CategoriesController (CRUD & Phân quyền)
-│   ├── Models/                   # Chứa lớp thực thể Category.cs và LoginRequestDto
-│   └── Program.cs                # Cấu hình dịch vụ, Middleware xác thực JWT và phân quyền
+│   ├── Controllers/              # Bổ sung CustomersController xử lý logic Khách hàng
+│   ├── Data/                     # Chứa SupermarketDbContext.cs (Cấu hình DB & Data Seeding)
+│   ├── Migrations/               # Chứa các file lịch sử tạo bảng và cập nhật Database tự động
+│   ├── Models/                   # Cập nhật Category.cs, thêm Product.cs và Customer.cs
+│   ├── appsettings.json          # Cấu hình chuỗi kết nối (Connection String) tới SQL Server
+│   └── Program.cs                # Đăng ký DbContext vào hệ thống Dependency Injection
 │
 └── MiniSupermarket.WinForms/     # Dự án Windows Forms (Frontend Client)
     ├── FormLogin.cs              # Giao diện đăng nhập hệ thống
-    ├── FormCategoryManagement.cs # Giao diện quản lý danh mục (CRUD theo phân quyền)
-    └── SessionManager.cs         # Lớp tĩnh lưu trữ Token và Vai trò người dùng (Admin/Cashier)
+    ├── FormCategoryManagement.cs # Quản lý Nhóm hàng (Gọi API thực tế từ CSDL)
+    ├── FormCustomerManagement.cs # (MỚI) Quản lý Khách hàng thân thiết
+    └── SessionManager.cs         # Lớp tĩnh lưu trữ Token và Vai trò
+🚀 4. Hướng dẫn Cài đặt và Chạy Dự án (Mới nhất)
+Bước 1: Cấu hình Cơ sở dữ liệu (Database)
 
+Mở file appsettings.json trong project MiniSupermarket.API.
 
-🚀 4. Hướng dẫn Chạy và Kiểm thử Dự án
-Bước 1: Khởi chạy Backend (Web API)Mở Solution bằng Visual Studio 2022.   Nhấp chuột phải vào project MiniSupermarket.API chọn Set as Startup Project.   Nhấn F5 để chạy. Trình duyệt sẽ tự động mở giao diện Swagger UI.
+Đảm bảo DefaultConnection trỏ đúng vào SQL Server của bạn (ví dụ: Server=.;Database=Phat_DB;Trusted_Connection=True;...).
 
-  Bước 2: Kiểm chứng Bảo mật JWT trên Swagger UIChưa đăng nhập: Thử gọi GET /api/categories mà không có Token, hệ thống sẽ trả về mã lỗi 401 Unauthorized.   Đăng nhập lấy Token: Gọi endpoint POST /api/auth/login với tài khoản mẫu:Admin: admin / 123456 (Toàn quyền quản trị)   Cashier: cashier / 123456 (Chỉ dùng màn hình POS)   Xác thực trên Swagger: Copy chuỗi token nhận được, bấm vào nút Authorize ở góc phải trên cùng Swagger, nhập định dạng Bearer <token> để kiểm tra quyền hạn trên các endpoint admin-dashboard và staff-pos.
+Mở Package Manager Console (Tools -> NuGet Package Manager -> Package Manager Console).
 
-  Bước 3: Chạy phía Frontend (WinForms Client)Đảm bảo cổng (Port) trong ApiClientService hoặc HttpClient của WinForms khớp với cổng https://localhost:XXXXX của Web API đang chạy.   Nhấp chuột phải vào project MiniSupermarket.WinForms chọn Debug -> Start new instance. Ứng dụng sẽ khởi chạy từ màn hình FormLogin.   Đăng nhập bằng tài khoản Admin hoặc Cashier để hệ thống phân quyền giao diện (ẩn/hiện các nút Thêm, Sửa, Xóa) và tự động đính kèm Bearer Token trong mỗi lần gọi dữ liệu qua API. 
+Chọn Default project là MiniSupermarket.API và chạy lệnh:
+
+PowerShell
+Update-Database
+(Hệ thống sẽ tự động tạo Database, tạo bảng Categories, Products, Customers và nạp dữ liệu mẫu).
+
+Bước 2: Khởi chạy Backend (Web API)
+
+Nhấp chuột phải vào MiniSupermarket.API chọn Set as Startup Project.
+
+Nhấn F5 để chạy. Trình duyệt mở Swagger UI.
+
+Kiểm thử: Gọi các API GET/POST/PUT/DELETE. Mở SSMS để kiểm chứng dữ liệu đã được lưu thật xuống đĩa cứng (không còn bị mất khi tắt API như Buổi 1 & 2).
+
+Bước 3: Chạy phía Frontend (WinForms Client)
+
+Cập nhật BaseAddress trong các Form (Customer, Category, Login) khớp với Port HTTPS của Swagger.
+
+Nhấp chuột phải vào MiniSupermarket.WinForms chọn Debug -> Start new instance.
+
+Đăng nhập bằng tài khoản Admin.
+
+Trải nghiệm thao tác Thêm/Sửa/Xóa Khách hàng và Nhóm hàng. Dữ liệu sẽ đồng bộ trực tiếp với SQL Server.
 
 👨‍💻 5. Tác giả
 Họ tên sinh viên: Phan Thanh Phát
 
-
 Mã sinh viên: 2124110118
-
 
 Lớp học phần: CCQ2411D
