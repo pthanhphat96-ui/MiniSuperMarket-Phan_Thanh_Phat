@@ -14,15 +14,22 @@ namespace MiniSupermarket.API.Data
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Order> Orders { get; set; }
-        public DbSet<OrderDetail> OrderDetails { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ==========================================
-            // 1. SEED BRAND - THƯƠNG HIỆU
-            // ==========================================
+            // 1. DỮ LIỆU MẪU CHO BẢNG ROLE (Sửa lỗi Foreign Key)
+            modelBuilder.Entity<Role>().HasData(
+                new Role { RoleId = 1, RoleName = "ADMIN" },
+                new Role { RoleId = 2, RoleName = "WAREHOUSE" },
+                new Role { RoleId = 3, RoleName = "CASHIER" }
+            );
+
+            // 2. CÁC BẢNG KHÁC
             modelBuilder.Entity<Brand>().HasData(
                 new Brand { BrandId = 1, BrandName = "Xiaomi", Description = "Hệ sinh thái nhà thông minh Xiaomi Mijia" },
                 new Brand { BrandId = 2, BrandName = "Tuya Smart", Description = "Nền tảng IoT Tuya toàn cầu" },
@@ -31,9 +38,6 @@ namespace MiniSupermarket.API.Data
                 new Brand { BrandId = 5, BrandName = "Amazon", Description = "Thiết bị loa và màn hình thông minh Alexa" }
             );
 
-            // ==========================================
-            // 2. SEED CATEGORY - DANH MỤC 
-            // ==========================================
             modelBuilder.Entity<Category>().HasData(
                 new Category { CategoryId = 1, CategoryName = "Chiếu sáng thông minh", Description = "Bóng đèn thông minh, dây LED, đèn cảm ứng" },
                 new Category { CategoryId = 2, CategoryName = "An ninh & Camera", Description = "Camera giám sát trong/ngoài trời, chuông cửa màn hình" },
@@ -52,9 +56,6 @@ namespace MiniSupermarket.API.Data
                 new Category { CategoryId = 15, CategoryName = "Phụ kiện Smart Home", Description = "Pin, dây cáp, remote, bộ chuyển đổi tín hiệu" }
             );
 
-            // ==========================================
-            // 3. SEED CUSTOMER - KHÁCH HÀNG (Đầy đủ 15 người)
-            // ==========================================
             modelBuilder.Entity<Customer>().HasData(
                 new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "25 Nguyễn Huệ, Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
                 new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "118 Võ Văn Tần, Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
@@ -73,9 +74,6 @@ namespace MiniSupermarket.API.Data
                 new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
             );
 
-            // ==========================================
-            // 4. SEED PRODUCT - SẢN PHẨM 
-            // ==========================================
             modelBuilder.Entity<Product>().HasData(
                 new Product { ProductId = 16, Barcode = "SMH000016", ProductName = "Dây LED thông minh RGB trang trí phòng", Price = 450000m, StockQuantity = 100, CategoryId = 1, BrandId = 3 },
                 new Product { ProductId = 17, Barcode = "SMH000017", ProductName = "Chuông cửa màn hình thông minh Ring", Price = 2500000m, StockQuantity = 30, CategoryId = 2, BrandId = 5 },
@@ -94,40 +92,43 @@ namespace MiniSupermarket.API.Data
                 new Product { ProductId = 30, Barcode = "SMH000030", ProductName = "Cảm biến nhiệt độ và độ ẩm phòng", Price = 120000m, StockQuantity = 200, CategoryId = 15, BrandId = 4 }
             );
 
-            // ==========================================
-            // 5. SEED ORDER - ĐƠN HÀNG (5 Đơn)
-            // ==========================================
             modelBuilder.Entity<Order>().HasData(
-                new Order { OrderId = 1, CustomerId = 1, OrderDate = new DateTime(2023, 10, 1, 14, 30, 0), TotalAmount = 2950000m, Status = "Đã giao hàng", ShippingAddress = "25 Nguyễn Huệ, Quận 1, TP.HCM" },
-                new Order { OrderId = 2, CustomerId = 2, OrderDate = new DateTime(2023, 10, 5, 9, 15, 0), TotalAmount = 2300000m, Status = "Đang xử lý", ShippingAddress = "118 Võ Văn Tần, Quận 3, TP.HCM" },
-                new Order { OrderId = 3, CustomerId = 6, OrderDate = new DateTime(2023, 10, 10, 11, 0, 0), TotalAmount = 14100000m, Status = "Đã giao hàng", ShippingAddress = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM" },
-                new Order { OrderId = 4, CustomerId = 9, OrderDate = new DateTime(2023, 10, 12, 16, 45, 0), TotalAmount = 650000m, Status = "Đã hủy", ShippingAddress = "102 Nguyễn Thị Thập, Quận 7, TP.HCM" },
-                new Order { OrderId = 5, CustomerId = 13, OrderDate = new DateTime(2023, 10, 15, 8, 20, 0), TotalAmount = 4300000m, Status = "Đang giao hàng", ShippingAddress = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM" }
+                new Order { OrderId = 1, OrderCode = "HD00001", Subtotal = 2950000m, Discount = 0m, Total = 2950000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 1, 1, 14, 30, 0), CustomerId = 1, CashierId = 8 },
+                new Order { OrderId = 2, OrderCode = "HD00002", Subtotal = 2300000m, Discount = 0m, Total = 2300000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 1, 5, 9, 15, 0), CustomerId = 2, CashierId = 9 },
+                new Order { OrderId = 3, OrderCode = "HD00003", Subtotal = 14100000m, Discount = 0m, Total = 14100000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 1, 10, 11, 0, 0), CustomerId = 6, CashierId = 10 },
+                new Order { OrderId = 4, OrderCode = "HD00004", Subtotal = 650000m, Discount = 0m, Total = 650000m, PaymentMethod = "CASH", Status = "CANCELLED", CreatedAt = new DateTime(2026, 1, 12, 16, 45, 0), CustomerId = 9, CashierId = 11 },
+                new Order { OrderId = 5, OrderCode = "HD00005", Subtotal = 4300000m, Discount = 0m, Total = 4300000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 1, 15, 8, 20, 0), CustomerId = 13, CashierId = 12 }
             );
 
-            // ==========================================
-            // 6. SEED ORDER DETAIL - CHI TIẾT ĐƠN HÀNG
-            // ==========================================
-            modelBuilder.Entity<OrderDetail>().HasData(
-                // Đơn hàng 1 (Total: 2,950,000)
-                new OrderDetail { OrderDetailId = 1, OrderId = 1, ProductId = 16, Quantity = 1, UnitPrice = 450000m },
-                new OrderDetail { OrderDetailId = 2, OrderId = 1, ProductId = 17, Quantity = 1, UnitPrice = 2500000m },
+            modelBuilder.Entity<OrderItem>().HasData(
+                new OrderItem { OrderItemId = 1, OrderId = 1, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
+                new OrderItem { OrderItemId = 2, OrderId = 1, ProductId = 17, Quantity = 1, UnitPrice = 2500000m, LineTotal = 2500000m },
+                new OrderItem { OrderItemId = 3, OrderId = 2, ProductId = 18, Quantity = 1, UnitPrice = 1800000m, LineTotal = 1800000m },
+                new OrderItem { OrderItemId = 4, OrderId = 2, ProductId = 20, Quantity = 2, UnitPrice = 250000m, LineTotal = 500000m },
+                new OrderItem { OrderItemId = 5, OrderId = 3, ProductId = 23, Quantity = 1, UnitPrice = 12000000m, LineTotal = 12000000m },
+                new OrderItem { OrderItemId = 6, OrderId = 3, ProductId = 21, Quantity = 1, UnitPrice = 2100000m, LineTotal = 2100000m },
+                new OrderItem { OrderItemId = 7, OrderId = 4, ProductId = 25, Quantity = 1, UnitPrice = 650000m, LineTotal = 650000m },
+                new OrderItem { OrderItemId = 8, OrderId = 5, ProductId = 26, Quantity = 1, UnitPrice = 1850000m, LineTotal = 1850000m },
+                new OrderItem { OrderItemId = 9, OrderId = 5, ProductId = 27, Quantity = 1, UnitPrice = 2200000m, LineTotal = 2200000m },
+                new OrderItem { OrderItemId = 10, OrderId = 5, ProductId = 20, Quantity = 1, UnitPrice = 250000m, LineTotal = 250000m }
+            );
 
-                // Đơn hàng 2 (Total: 2,300,000)
-                new OrderDetail { OrderDetailId = 3, OrderId = 2, ProductId = 18, Quantity = 1, UnitPrice = 1800000m },
-                new OrderDetail { OrderDetailId = 4, OrderId = 2, ProductId = 20, Quantity = 2, UnitPrice = 250000m },
-
-                // Đơn hàng 3 (Total: 14,100,000) - Đại gia mua máy hút bụi xịn
-                new OrderDetail { OrderDetailId = 5, OrderId = 3, ProductId = 23, Quantity = 1, UnitPrice = 12000000m },
-                new OrderDetail { OrderDetailId = 6, OrderId = 3, ProductId = 21, Quantity = 1, UnitPrice = 2100000m },
-
-                // Đơn hàng 4 (Total: 650,000) - Đã hủy
-                new OrderDetail { OrderDetailId = 7, OrderId = 4, ProductId = 25, Quantity = 1, UnitPrice = 650000m },
-
-                // Đơn hàng 5 (Total: 4,300,000)
-                new OrderDetail { OrderDetailId = 8, OrderId = 5, ProductId = 26, Quantity = 1, UnitPrice = 1850000m },
-                new OrderDetail { OrderDetailId = 9, OrderId = 5, ProductId = 27, Quantity = 1, UnitPrice = 2200000m },
-                new OrderDetail { OrderDetailId = 10, OrderId = 5, ProductId = 20, Quantity = 1, UnitPrice = 250000m }
+            modelBuilder.Entity<User>().HasData(
+                new User { UserId = 1, Username = "admin01", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Nguyễn Văn Admin", Email = "admin01@gmail.com", Phone = "0901000001", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0), RoleId = 1 },
+                new User { UserId = 2, Username = "admin02", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Trần Thị Admin", Email = "admin02@gmail.com", Phone = "0901000002", IsActive = true, CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0), RoleId = 1 },
+                new User { UserId = 3, Username = "admin03", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Lê Văn Quản", Email = "admin03@gmail.com", Phone = "0901000003", IsActive = true, CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0), RoleId = 1 },
+                new User { UserId = 4, Username = "warehouse01", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Phạm Văn Kho", Email = "warehouse01@gmail.com", Phone = "0901000004", IsActive = true, CreatedAt = new DateTime(2026, 1, 4, 8, 0, 0), RoleId = 2 },
+                new User { UserId = 5, Username = "warehouse02", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Hoàng Thị Hương", Email = "warehouse02@gmail.com", Phone = "0901000005", IsActive = true, CreatedAt = new DateTime(2026, 1, 5, 8, 0, 0), RoleId = 2 },
+                new User { UserId = 6, Username = "warehouse03", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Võ Minh Đức", Email = "warehouse03@gmail.com", Phone = "0901000006", IsActive = true, CreatedAt = new DateTime(2026, 1, 6, 8, 0, 0), RoleId = 2 },
+                new User { UserId = 7, Username = "warehouse04", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Đặng Quốc Anh", Email = "warehouse04@gmail.com", Phone = "0901000007", IsActive = true, CreatedAt = new DateTime(2026, 1, 7, 8, 0, 0), RoleId = 2 },
+                new User { UserId = 8, Username = "cashier01", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Nguyễn Thị Lan", Email = "cashier01@gmail.com", Phone = "0901000008", IsActive = true, CreatedAt = new DateTime(2026, 1, 8, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 9, Username = "cashier02", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Trần Văn Nam", Email = "cashier02@gmail.com", Phone = "0901000009", IsActive = true, CreatedAt = new DateTime(2026, 1, 9, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 10, Username = "cashier03", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Phan Thị Mai", Email = "cashier03@gmail.com", Phone = "0901000010", IsActive = true, CreatedAt = new DateTime(2026, 1, 10, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 11, Username = "cashier04", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Lý Hoàng Long", Email = "cashier04@gmail.com", Phone = "0901000011", IsActive = true, CreatedAt = new DateTime(2026, 1, 11, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 12, Username = "cashier05", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Bùi Thị Ngọc", Email = "cashier05@gmail.com", Phone = "0901000012", IsActive = true, CreatedAt = new DateTime(2026, 1, 12, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 13, Username = "cashier06", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Đỗ Minh Tâm", Email = "cashier06@gmail.com", Phone = "0901000013", IsActive = true, CreatedAt = new DateTime(2026, 1, 13, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 14, Username = "cashier07", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Huỳnh Văn Phúc", Email = "cashier07@gmail.com", Phone = "0901000014", IsActive = true, CreatedAt = new DateTime(2026, 1, 14, 8, 0, 0), RoleId = 3 },
+                new User { UserId = 15, Username = "cashier08", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Mai Thị Thu", Email = "cashier08@gmail.com", Phone = "0901000015", IsActive = true, CreatedAt = new DateTime(2026, 1, 15, 8, 0, 0), RoleId = 3 }
             );
         }
     }

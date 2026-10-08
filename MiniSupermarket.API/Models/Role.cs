@@ -1,15 +1,21 @@
-﻿namespace MiniSupermarket.API.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+
+namespace MiniSupermarket.API.Models
 {
-    // Lớp biểu diễn thực thể Vai trò nhân viên trong siêu thị mini
+    [Table("Roles")]
     public class Role
     {
-        // Mã định danh vai trò (Khóa chính)
-        public int Id { get; set; }
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int RoleId { get; set; }
 
-        // Tên vai trò (Ví dụ: Admin, Cashier, Warehouse)
-        public string RoleName { get; set; } = string.Empty;
+        [Required]
+        [StringLength(50)]
+        public string RoleName { get; set; } = string.Empty;   // ADMIN, MANAGER, CASHIER
 
-        // Mô tả chi tiết chức năng của vai trò
-        public string? Description { get; set; }
+        [JsonIgnore]
+        public virtual ICollection<User> Users { get; set; } = new List<User>();
     }
 }

@@ -374,25 +374,42 @@ namespace MiniSupermarket.API.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OrderId"));
 
-                    b.Property<int>("CustomerId")
+                    b.Property<int>("CashierId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("OrderDate")
+                    b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("ShippingAddress")
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)");
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OrderCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
-                    b.Property<decimal>("TotalAmount")
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("OrderId");
+
+                    b.HasIndex("CashierId");
 
                     b.HasIndex("CustomerId");
 
@@ -402,57 +419,80 @@ namespace MiniSupermarket.API.Migrations
                         new
                         {
                             OrderId = 1,
+                            CashierId = 8,
+                            CreatedAt = new DateTime(2026, 1, 1, 14, 30, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 1,
-                            OrderDate = new DateTime(2023, 10, 1, 14, 30, 0, 0, DateTimeKind.Unspecified),
-                            ShippingAddress = "25 Nguyễn Huệ, Quận 1, TP.HCM",
-                            Status = "Đã giao hàng",
-                            TotalAmount = 2950000m
+                            Discount = 0m,
+                            OrderCode = "HD00001",
+                            PaymentMethod = "CASH",
+                            Status = "PAID",
+                            Subtotal = 2950000m,
+                            Total = 2950000m
                         },
                         new
                         {
                             OrderId = 2,
+                            CashierId = 9,
+                            CreatedAt = new DateTime(2026, 1, 5, 9, 15, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 2,
-                            OrderDate = new DateTime(2023, 10, 5, 9, 15, 0, 0, DateTimeKind.Unspecified),
-                            ShippingAddress = "118 Võ Văn Tần, Quận 3, TP.HCM",
-                            Status = "Đang xử lý",
-                            TotalAmount = 2300000m
+                            Discount = 0m,
+                            OrderCode = "HD00002",
+                            PaymentMethod = "CARD",
+                            Status = "PAID",
+                            Subtotal = 2300000m,
+                            Total = 2300000m
                         },
                         new
                         {
                             OrderId = 3,
+                            CashierId = 10,
+                            CreatedAt = new DateTime(2026, 1, 10, 11, 0, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 6,
-                            OrderDate = new DateTime(2023, 10, 10, 11, 0, 0, 0, DateTimeKind.Unspecified),
-                            ShippingAddress = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM",
-                            Status = "Đã giao hàng",
-                            TotalAmount = 14100000m
+                            Discount = 0m,
+                            OrderCode = "HD00003",
+                            PaymentMethod = "BANK_TRANSFER",
+                            Status = "PAID",
+                            Subtotal = 14100000m,
+                            Total = 14100000m
                         },
                         new
                         {
                             OrderId = 4,
+                            CashierId = 11,
+                            CreatedAt = new DateTime(2026, 1, 12, 16, 45, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 9,
-                            OrderDate = new DateTime(2023, 10, 12, 16, 45, 0, 0, DateTimeKind.Unspecified),
-                            ShippingAddress = "102 Nguyễn Thị Thập, Quận 7, TP.HCM",
-                            Status = "Đã hủy",
-                            TotalAmount = 650000m
+                            Discount = 0m,
+                            OrderCode = "HD00004",
+                            PaymentMethod = "CASH",
+                            Status = "CANCELLED",
+                            Subtotal = 650000m,
+                            Total = 650000m
                         },
                         new
                         {
                             OrderId = 5,
+                            CashierId = 12,
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 13,
-                            OrderDate = new DateTime(2023, 10, 15, 8, 20, 0, 0, DateTimeKind.Unspecified),
-                            ShippingAddress = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM",
-                            Status = "Đang giao hàng",
-                            TotalAmount = 4300000m
+                            Discount = 0m,
+                            OrderCode = "HD00005",
+                            PaymentMethod = "MOMO",
+                            Status = "PAID",
+                            Subtotal = 4300000m,
+                            Total = 4300000m
                         });
                 });
 
-            modelBuilder.Entity("MiniSupermarket.API.Models.OrderDetail", b =>
+            modelBuilder.Entity("MiniSupermarket.API.Models.OrderItem", b =>
                 {
-                    b.Property<int>("OrderDetailId")
+                    b.Property<int>("OrderItemId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OrderDetailId"));
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("OrderItemId"));
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
@@ -466,18 +506,19 @@ namespace MiniSupermarket.API.Migrations
                     b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("OrderDetailId");
+                    b.HasKey("OrderItemId");
 
                     b.HasIndex("OrderId");
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("OrderDetails");
+                    b.ToTable("OrderItems");
 
                     b.HasData(
                         new
                         {
-                            OrderDetailId = 1,
+                            OrderItemId = 1,
+                            LineTotal = 450000m,
                             OrderId = 1,
                             ProductId = 16,
                             Quantity = 1,
@@ -485,7 +526,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 2,
+                            OrderItemId = 2,
+                            LineTotal = 2500000m,
                             OrderId = 1,
                             ProductId = 17,
                             Quantity = 1,
@@ -493,7 +535,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 3,
+                            OrderItemId = 3,
+                            LineTotal = 1800000m,
                             OrderId = 2,
                             ProductId = 18,
                             Quantity = 1,
@@ -501,7 +544,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 4,
+                            OrderItemId = 4,
+                            LineTotal = 500000m,
                             OrderId = 2,
                             ProductId = 20,
                             Quantity = 2,
@@ -509,7 +553,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 5,
+                            OrderItemId = 5,
+                            LineTotal = 12000000m,
                             OrderId = 3,
                             ProductId = 23,
                             Quantity = 1,
@@ -517,7 +562,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 6,
+                            OrderItemId = 6,
+                            LineTotal = 2100000m,
                             OrderId = 3,
                             ProductId = 21,
                             Quantity = 1,
@@ -525,7 +571,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 7,
+                            OrderItemId = 7,
+                            LineTotal = 650000m,
                             OrderId = 4,
                             ProductId = 25,
                             Quantity = 1,
@@ -533,7 +580,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 8,
+                            OrderItemId = 8,
+                            LineTotal = 1850000m,
                             OrderId = 5,
                             ProductId = 26,
                             Quantity = 1,
@@ -541,7 +589,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 9,
+                            OrderItemId = 9,
+                            LineTotal = 2200000m,
                             OrderId = 5,
                             ProductId = 27,
                             Quantity = 1,
@@ -549,7 +598,8 @@ namespace MiniSupermarket.API.Migrations
                         },
                         new
                         {
-                            OrderDetailId = 10,
+                            OrderItemId = 10,
+                            LineTotal = 250000m,
                             OrderId = 5,
                             ProductId = 20,
                             Quantity = 1,
@@ -748,21 +798,291 @@ namespace MiniSupermarket.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MiniSupermarket.API.Models.Role", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("RoleId"));
+
+                    b.Property<string>("RoleName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("RoleId");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = 1,
+                            RoleName = "ADMIN"
+                        },
+                        new
+                        {
+                            RoleId = 2,
+                            RoleName = "WAREHOUSE"
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            RoleName = "CASHIER"
+                        });
+                });
+
+            modelBuilder.Entity("MiniSupermarket.API.Models.User", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("UserId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "admin01@gmail.com",
+                            FullName = "Nguyễn Văn Admin",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000001",
+                            RoleId = 1,
+                            Username = "admin01"
+                        },
+                        new
+                        {
+                            UserId = 2,
+                            CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "admin02@gmail.com",
+                            FullName = "Trần Thị Admin",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000002",
+                            RoleId = 1,
+                            Username = "admin02"
+                        },
+                        new
+                        {
+                            UserId = 3,
+                            CreatedAt = new DateTime(2026, 1, 3, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "admin03@gmail.com",
+                            FullName = "Lê Văn Quản",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000003",
+                            RoleId = 1,
+                            Username = "admin03"
+                        },
+                        new
+                        {
+                            UserId = 4,
+                            CreatedAt = new DateTime(2026, 1, 4, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "warehouse01@gmail.com",
+                            FullName = "Phạm Văn Kho",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000004",
+                            RoleId = 2,
+                            Username = "warehouse01"
+                        },
+                        new
+                        {
+                            UserId = 5,
+                            CreatedAt = new DateTime(2026, 1, 5, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "warehouse02@gmail.com",
+                            FullName = "Hoàng Thị Hương",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000005",
+                            RoleId = 2,
+                            Username = "warehouse02"
+                        },
+                        new
+                        {
+                            UserId = 6,
+                            CreatedAt = new DateTime(2026, 1, 6, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "warehouse03@gmail.com",
+                            FullName = "Võ Minh Đức",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000006",
+                            RoleId = 2,
+                            Username = "warehouse03"
+                        },
+                        new
+                        {
+                            UserId = 7,
+                            CreatedAt = new DateTime(2026, 1, 7, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "warehouse04@gmail.com",
+                            FullName = "Đặng Quốc Anh",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000007",
+                            RoleId = 2,
+                            Username = "warehouse04"
+                        },
+                        new
+                        {
+                            UserId = 8,
+                            CreatedAt = new DateTime(2026, 1, 8, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier01@gmail.com",
+                            FullName = "Nguyễn Thị Lan",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000008",
+                            RoleId = 3,
+                            Username = "cashier01"
+                        },
+                        new
+                        {
+                            UserId = 9,
+                            CreatedAt = new DateTime(2026, 1, 9, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier02@gmail.com",
+                            FullName = "Trần Văn Nam",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000009",
+                            RoleId = 3,
+                            Username = "cashier02"
+                        },
+                        new
+                        {
+                            UserId = 10,
+                            CreatedAt = new DateTime(2026, 1, 10, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier03@gmail.com",
+                            FullName = "Phan Thị Mai",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000010",
+                            RoleId = 3,
+                            Username = "cashier03"
+                        },
+                        new
+                        {
+                            UserId = 11,
+                            CreatedAt = new DateTime(2026, 1, 11, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier04@gmail.com",
+                            FullName = "Lý Hoàng Long",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000011",
+                            RoleId = 3,
+                            Username = "cashier04"
+                        },
+                        new
+                        {
+                            UserId = 12,
+                            CreatedAt = new DateTime(2026, 1, 12, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier05@gmail.com",
+                            FullName = "Bùi Thị Ngọc",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000012",
+                            RoleId = 3,
+                            Username = "cashier05"
+                        },
+                        new
+                        {
+                            UserId = 13,
+                            CreatedAt = new DateTime(2026, 1, 13, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier06@gmail.com",
+                            FullName = "Đỗ Minh Tâm",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000013",
+                            RoleId = 3,
+                            Username = "cashier06"
+                        },
+                        new
+                        {
+                            UserId = 14,
+                            CreatedAt = new DateTime(2026, 1, 14, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier07@gmail.com",
+                            FullName = "Huỳnh Văn Phúc",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000014",
+                            RoleId = 3,
+                            Username = "cashier07"
+                        },
+                        new
+                        {
+                            UserId = 15,
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 0, 0, 0, DateTimeKind.Unspecified),
+                            Email = "cashier08@gmail.com",
+                            FullName = "Mai Thị Thu",
+                            IsActive = true,
+                            PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+                            Phone = "0901000015",
+                            RoleId = 3,
+                            Username = "cashier08"
+                        });
+                });
+
             modelBuilder.Entity("MiniSupermarket.API.Models.Order", b =>
                 {
-                    b.HasOne("MiniSupermarket.API.Models.Customer", "Customer")
-                        .WithMany("Orders")
-                        .HasForeignKey("CustomerId")
+                    b.HasOne("MiniSupermarket.API.Models.User", "Cashier")
+                        .WithMany()
+                        .HasForeignKey("CashierId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("MiniSupermarket.API.Models.Customer", "Customer")
+                        .WithMany("Orders")
+                        .HasForeignKey("CustomerId");
+
+                    b.Navigation("Cashier");
 
                     b.Navigation("Customer");
                 });
 
-            modelBuilder.Entity("MiniSupermarket.API.Models.OrderDetail", b =>
+            modelBuilder.Entity("MiniSupermarket.API.Models.OrderItem", b =>
                 {
                     b.HasOne("MiniSupermarket.API.Models.Order", "Order")
-                        .WithMany("OrderDetails")
+                        .WithMany("Items")
                         .HasForeignKey("OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -797,6 +1117,17 @@ namespace MiniSupermarket.API.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("MiniSupermarket.API.Models.User", b =>
+                {
+                    b.HasOne("MiniSupermarket.API.Models.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("MiniSupermarket.API.Models.Brand", b =>
                 {
                     b.Navigation("Products");
@@ -814,7 +1145,12 @@ namespace MiniSupermarket.API.Migrations
 
             modelBuilder.Entity("MiniSupermarket.API.Models.Order", b =>
                 {
-                    b.Navigation("OrderDetails");
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("MiniSupermarket.API.Models.Role", b =>
+                {
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }
