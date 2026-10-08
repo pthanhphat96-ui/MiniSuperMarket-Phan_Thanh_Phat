@@ -31,5 +31,6 @@ namespace MiniSupermarket.API.Models
         // Hạng thành viên - mặc định "Chuẩn"
         [MaxLength(50)]
         public string MembershipRank { get; set; } = "Chuẩn";
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

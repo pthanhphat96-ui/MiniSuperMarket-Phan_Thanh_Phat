@@ -3,38 +3,37 @@ using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Data
 {
-    // DbContext đại diện cho phiên làm việc với cơ sở dữ liệu SQL Server
     public class SupermarketDbContext : DbContext
     {
-        public SupermarketDbContext(
-            DbContextOptions<SupermarketDbContext> options
-        ) : base(options)
+        public SupermarketDbContext(DbContextOptions<SupermarketDbContext> options) : base(options)
         {
         }
 
-        // ==========================================
-        // KHAI BÁO CÁC BẢNG DỮ LIỆU
-        // ==========================================
-
         public DbSet<Category> Categories { get; set; }
-
         public DbSet<Product> Products { get; set; }
-
         public DbSet<Customer> Customers { get; set; }
-
-
-        // ==========================================
-        // CẤU HÌNH DỮ LIỆU MỒI (SMART HOME)
-        // ==========================================
+        public DbSet<Brand> Brands { get; set; }
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderDetail> OrderDetails { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
             // ==========================================
-            // SEED 15 CATEGORY - DANH MỤC SMART HOME
+            // 1. SEED BRAND - THƯƠNG HIỆU
             // ==========================================
+            modelBuilder.Entity<Brand>().HasData(
+                new Brand { BrandId = 1, BrandName = "Xiaomi", Description = "Hệ sinh thái nhà thông minh Xiaomi Mijia" },
+                new Brand { BrandId = 2, BrandName = "Tuya Smart", Description = "Nền tảng IoT Tuya toàn cầu" },
+                new Brand { BrandId = 3, BrandName = "Philips", Description = "Chuyên các thiết bị chiếu sáng thông minh Philips Hue" },
+                new Brand { BrandId = 4, BrandName = "Aqara", Description = "Thương hiệu cao cấp thuộc hệ sinh thái Apple HomeKit" },
+                new Brand { BrandId = 5, BrandName = "Amazon", Description = "Thiết bị loa và màn hình thông minh Alexa" }
+            );
 
+            // ==========================================
+            // 2. SEED CATEGORY - DANH MỤC 
+            // ==========================================
             modelBuilder.Entity<Category>().HasData(
                 new Category { CategoryId = 1, CategoryName = "Chiếu sáng thông minh", Description = "Bóng đèn thông minh, dây LED, đèn cảm ứng" },
                 new Category { CategoryId = 2, CategoryName = "An ninh & Camera", Description = "Camera giám sát trong/ngoài trời, chuông cửa màn hình" },
@@ -53,51 +52,82 @@ namespace MiniSupermarket.API.Data
                 new Category { CategoryId = 15, CategoryName = "Phụ kiện Smart Home", Description = "Pin, dây cáp, remote, bộ chuyển đổi tín hiệu" }
             );
 
-
             // ==========================================
-            // SEED 15 CUSTOMER
+            // 3. SEED CUSTOMER - KHÁCH HÀNG (Đầy đủ 15 người)
             // ==========================================
-
             modelBuilder.Entity<Customer>().HasData(
-       new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "25 Nguyễn Huệ, Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
-new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "118 Võ Văn Tần, Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
-new Customer { CustomerId = 3, CustomerName = "Lê Văn C", PhoneNumber = "0983344556", Address = "72 Nguyễn Trãi, Quận 5, TP.HCM", RewardPoints = 100, MembershipRank = "Chuẩn" },
-new Customer { CustomerId = 4, CustomerName = "Phạm Thị D", PhoneNumber = "0905678123", Address = "156 Thành Thái, Quận 10, TP.HCM", RewardPoints = 2300, MembershipRank = "Vàng" },
-new Customer { CustomerId = 5, CustomerName = "Hoàng Văn E", PhoneNumber = "0912345678", Address = "43 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM", RewardPoints = 800, MembershipRank = "Bạc" },
-new Customer { CustomerId = 6, CustomerName = "Võ Thị F", PhoneNumber = "0987654321", Address = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM", RewardPoints = 3200, MembershipRank = "Kim Cương" },
-new Customer { CustomerId = 7, CustomerName = "Đặng Văn G", PhoneNumber = "0909876543", Address = "215 Cộng Hòa, Quận Tân Bình, TP.HCM", RewardPoints = 250, MembershipRank = "Chuẩn" },
-new Customer { CustomerId = 8, CustomerName = "Bùi Thị H", PhoneNumber = "0913456789", Address = "36 Phan Đình Phùng, Quận Phú Nhuận, TP.HCM", RewardPoints = 1200, MembershipRank = "Bạc" },
-new Customer { CustomerId = 9, CustomerName = "Đỗ Văn I", PhoneNumber = "0981234567", Address = "102 Nguyễn Thị Thập, Quận 7, TP.HCM", RewardPoints = 4500, MembershipRank = "Kim Cương" },
-new Customer { CustomerId = 10, CustomerName = "Nguyễn Thị K", PhoneNumber = "0903456789", Address = "68 Hậu Giang, Quận 6, TP.HCM", RewardPoints = 150, MembershipRank = "Chuẩn" },
-new Customer { CustomerId = 11, CustomerName = "Trương Văn L", PhoneNumber = "0915678901", Address = "145 Võ Văn Ngân, TP. Thủ Đức, TP.HCM", RewardPoints = 1800, MembershipRank = "Vàng" },
-new Customer { CustomerId = 12, CustomerName = "Phan Thị M", PhoneNumber = "0986789012", Address = "234 Lê Văn Khương, Quận 12, TP.HCM", RewardPoints = 700, MembershipRank = "Bạc" },
-new Customer { CustomerId = 13, CustomerName = "Lý Văn N", PhoneNumber = "0907890123", Address = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM", RewardPoints = 5000, MembershipRank = "Kim Cương" },
-new Customer { CustomerId = 14, CustomerName = "Huỳnh Thị P", PhoneNumber = "0918901234", Address = "321 Tỉnh Lộ 10, Quận Bình Tân, TP.HCM", RewardPoints = 350, MembershipRank = "Chuẩn" },
-new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
-
+                new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "25 Nguyễn Huệ, Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
+                new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "118 Võ Văn Tần, Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
+                new Customer { CustomerId = 3, CustomerName = "Lê Văn C", PhoneNumber = "0983344556", Address = "72 Nguyễn Trãi, Quận 5, TP.HCM", RewardPoints = 100, MembershipRank = "Chuẩn" },
+                new Customer { CustomerId = 4, CustomerName = "Phạm Thị D", PhoneNumber = "0905678123", Address = "156 Thành Thái, Quận 10, TP.HCM", RewardPoints = 2300, MembershipRank = "Vàng" },
+                new Customer { CustomerId = 5, CustomerName = "Hoàng Văn E", PhoneNumber = "0912345678", Address = "43 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM", RewardPoints = 800, MembershipRank = "Bạc" },
+                new Customer { CustomerId = 6, CustomerName = "Võ Thị F", PhoneNumber = "0987654321", Address = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM", RewardPoints = 3200, MembershipRank = "Kim Cương" },
+                new Customer { CustomerId = 7, CustomerName = "Đặng Văn G", PhoneNumber = "0909876543", Address = "215 Cộng Hòa, Quận Tân Bình, TP.HCM", RewardPoints = 250, MembershipRank = "Chuẩn" },
+                new Customer { CustomerId = 8, CustomerName = "Bùi Thị H", PhoneNumber = "0913456789", Address = "36 Phan Đình Phùng, Quận Phú Nhuận, TP.HCM", RewardPoints = 1200, MembershipRank = "Bạc" },
+                new Customer { CustomerId = 9, CustomerName = "Đỗ Văn I", PhoneNumber = "0981234567", Address = "102 Nguyễn Thị Thập, Quận 7, TP.HCM", RewardPoints = 4500, MembershipRank = "Kim Cương" },
+                new Customer { CustomerId = 10, CustomerName = "Nguyễn Thị K", PhoneNumber = "0903456789", Address = "68 Hậu Giang, Quận 6, TP.HCM", RewardPoints = 150, MembershipRank = "Chuẩn" },
+                new Customer { CustomerId = 11, CustomerName = "Trương Văn L", PhoneNumber = "0915678901", Address = "145 Võ Văn Ngân, TP. Thủ Đức, TP.HCM", RewardPoints = 1800, MembershipRank = "Vàng" },
+                new Customer { CustomerId = 12, CustomerName = "Phan Thị M", PhoneNumber = "0986789012", Address = "234 Lê Văn Khương, Quận 12, TP.HCM", RewardPoints = 700, MembershipRank = "Bạc" },
+                new Customer { CustomerId = 13, CustomerName = "Lý Văn N", PhoneNumber = "0907890123", Address = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM", RewardPoints = 5000, MembershipRank = "Kim Cương" },
+                new Customer { CustomerId = 14, CustomerName = "Huỳnh Thị P", PhoneNumber = "0918901234", Address = "321 Tỉnh Lộ 10, Quận Bình Tân, TP.HCM", RewardPoints = 350, MembershipRank = "Chuẩn" },
+                new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
             );
 
-
             // ==========================================
-            // SEED 15 PRODUCT - SẢN PHẨM SMART HOME
+            // 4. SEED PRODUCT - SẢN PHẨM 
             // ==========================================
-
             modelBuilder.Entity<Product>().HasData(
-                new Product { ProductId = 1, Barcode = "SMH000001", ProductName = "Bóng đèn thông minh Philips Hue Color", Price = 1290000m, StockQuantity = 50, CategoryId = 1 },
-                new Product { ProductId = 2, Barcode = "SMH000002", ProductName = "Camera WiFi xoay 360 Ezviz C6N", Price = 550000m, StockQuantity = 120, CategoryId = 2 },
-                new Product { ProductId = 3, Barcode = "SMH000003", ProductName = "Khóa cửa vân tay thông minh Xiaomi", Price = 4500000m, StockQuantity = 20, CategoryId = 3 },
-                new Product { ProductId = 4, Barcode = "SMH000004", ProductName = "Cảm biến chuyển động gắn tường Aqara", Price = 350000m, StockQuantity = 80, CategoryId = 4 },
-                new Product { ProductId = 5, Barcode = "SMH000005", ProductName = "Ổ cắm điện WiFi đo công suất Tuya", Price = 150000m, StockQuantity = 200, CategoryId = 5 },
-                new Product { ProductId = 6, Barcode = "SMH000006", ProductName = "Loa trợ lý ảo Google Nest Mini", Price = 690000m, StockQuantity = 60, CategoryId = 6 },
-                new Product { ProductId = 7, Barcode = "SMH000007", ProductName = "Nồi chiên không dầu Xiaomi Smart Air Fryer", Price = 1490000m, StockQuantity = 40, CategoryId = 7 },
-                new Product { ProductId = 8, Barcode = "SMH000008", ProductName = "Robot hút bụi Roborock S8 Pro Ultra", Price = 24990000m, StockQuantity = 15, CategoryId = 8 },
-                new Product { ProductId = 9, Barcode = "SMH000009", ProductName = "Máy lọc không khí Xiaomi Mi Air Purifier 4", Price = 3290000m, StockQuantity = 30, CategoryId = 9 },
-                new Product { ProductId = 10, Barcode = "SMH000010", ProductName = "Bộ điều khiển trung tâm Aqara Hub M2", Price = 1190000m, StockQuantity = 45, CategoryId = 10 },
-                new Product { ProductId = 11, Barcode = "SMH000011", ProductName = "Động cơ rèm cuốn tự động Tuya WiFi", Price = 1250000m, StockQuantity = 25, CategoryId = 11 },
-                new Product { ProductId = 12, Barcode = "SMH000012", ProductName = "Nắp bồn cầu sưởi ấm thông minh TOTO", Price = 8500000m, StockQuantity = 10, CategoryId = 12 },
-                new Product { ProductId = 13, Barcode = "SMH000013", ProductName = "Cân sức khỏe thông minh Xiaomi Body Composition", Price = 390000m, StockQuantity = 100, CategoryId = 13 },
-                new Product { ProductId = 14, Barcode = "SMH000014", ProductName = "Van nước tưới cây tự động WiFi", Price = 850000m, StockQuantity = 35, CategoryId = 14 },
-                new Product { ProductId = 15, Barcode = "SMH000015", ProductName = "Bộ Hub hồng ngoại điều khiển TV/Điều hòa", Price = 180000m, StockQuantity = 150, CategoryId = 15 }
+                new Product { ProductId = 16, Barcode = "SMH000016", ProductName = "Dây LED thông minh RGB trang trí phòng", Price = 450000m, StockQuantity = 100, CategoryId = 1, BrandId = 3 },
+                new Product { ProductId = 17, Barcode = "SMH000017", ProductName = "Chuông cửa màn hình thông minh Ring", Price = 2500000m, StockQuantity = 30, CategoryId = 2, BrandId = 5 },
+                new Product { ProductId = 18, Barcode = "SMH000018", ProductName = "Khóa cửa thẻ từ khách sạn Tuya", Price = 1800000m, StockQuantity = 50, CategoryId = 3, BrandId = 2 },
+                new Product { ProductId = 19, Barcode = "SMH000019", ProductName = "Cảm biến báo khói báo cháy thông minh", Price = 400000m, StockQuantity = 70, CategoryId = 4, BrandId = 1 },
+                new Product { ProductId = 20, Barcode = "SMH000020", ProductName = "Công tắc cảm ứng âm tường mặt kính 3 nút", Price = 250000m, StockQuantity = 150, CategoryId = 5, BrandId = 2 },
+                new Product { ProductId = 21, Barcode = "SMH000021", ProductName = "Màn hình thông minh Amazon Echo Show 8", Price = 2100000m, StockQuantity = 40, CategoryId = 6, BrandId = 5 },
+                new Product { ProductId = 22, Barcode = "SMH000022", ProductName = "Máy pha cà phê thông minh kết nối WiFi", Price = 3500000m, StockQuantity = 20, CategoryId = 7, BrandId = 1 },
+                new Product { ProductId = 23, Barcode = "SMH000023", ProductName = "Máy hút bụi cầm tay không dây Dyson", Price = 12000000m, StockQuantity = 10, CategoryId = 8, BrandId = 1 },
+                new Product { ProductId = 24, Barcode = "SMH000024", ProductName = "Máy tạo độ ẩm thông minh Deerma", Price = 550000m, StockQuantity = 85, CategoryId = 9, BrandId = 1 },
+                new Product { ProductId = 25, Barcode = "SMH000025", ProductName = "Bộ điều khiển trung tâm Zigbee 3.0", Price = 650000m, StockQuantity = 100, CategoryId = 10, BrandId = 4 },
+                new Product { ProductId = 26, Barcode = "SMH000026", ProductName = "Động cơ kéo rèm vải thông minh Xiaomi", Price = 1850000m, StockQuantity = 25, CategoryId = 11, BrandId = 1 },
+                new Product { ProductId = 27, Barcode = "SMH000027", ProductName = "Gương thông minh tích hợp đèn LED phòng tắm", Price = 2200000m, StockQuantity = 15, CategoryId = 12, BrandId = 2 },
+                new Product { ProductId = 28, Barcode = "SMH000028", ProductName = "Máy đo huyết áp bắp tay Bluetooth Omron", Price = 1450000m, StockQuantity = 60, CategoryId = 13, BrandId = 1 },
+                new Product { ProductId = 29, Barcode = "SMH000029", ProductName = "Robot cắt cỏ tự động ngoài trời", Price = 18000000m, StockQuantity = 5, CategoryId = 14, BrandId = 2 },
+                new Product { ProductId = 30, Barcode = "SMH000030", ProductName = "Cảm biến nhiệt độ và độ ẩm phòng", Price = 120000m, StockQuantity = 200, CategoryId = 15, BrandId = 4 }
+            );
+
+            // ==========================================
+            // 5. SEED ORDER - ĐƠN HÀNG (5 Đơn)
+            // ==========================================
+            modelBuilder.Entity<Order>().HasData(
+                new Order { OrderId = 1, CustomerId = 1, OrderDate = new DateTime(2023, 10, 1, 14, 30, 0), TotalAmount = 2950000m, Status = "Đã giao hàng", ShippingAddress = "25 Nguyễn Huệ, Quận 1, TP.HCM" },
+                new Order { OrderId = 2, CustomerId = 2, OrderDate = new DateTime(2023, 10, 5, 9, 15, 0), TotalAmount = 2300000m, Status = "Đang xử lý", ShippingAddress = "118 Võ Văn Tần, Quận 3, TP.HCM" },
+                new Order { OrderId = 3, CustomerId = 6, OrderDate = new DateTime(2023, 10, 10, 11, 0, 0), TotalAmount = 14100000m, Status = "Đã giao hàng", ShippingAddress = "89 Phạm Văn Đồng, Quận Gò Vấp, TP.HCM" },
+                new Order { OrderId = 4, CustomerId = 9, OrderDate = new DateTime(2023, 10, 12, 16, 45, 0), TotalAmount = 650000m, Status = "Đã hủy", ShippingAddress = "102 Nguyễn Thị Thập, Quận 7, TP.HCM" },
+                new Order { OrderId = 5, CustomerId = 13, OrderDate = new DateTime(2023, 10, 15, 8, 20, 0), TotalAmount = 4300000m, Status = "Đang giao hàng", ShippingAddress = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM" }
+            );
+
+            // ==========================================
+            // 6. SEED ORDER DETAIL - CHI TIẾT ĐƠN HÀNG
+            // ==========================================
+            modelBuilder.Entity<OrderDetail>().HasData(
+                // Đơn hàng 1 (Total: 2,950,000)
+                new OrderDetail { OrderDetailId = 1, OrderId = 1, ProductId = 16, Quantity = 1, UnitPrice = 450000m },
+                new OrderDetail { OrderDetailId = 2, OrderId = 1, ProductId = 17, Quantity = 1, UnitPrice = 2500000m },
+
+                // Đơn hàng 2 (Total: 2,300,000)
+                new OrderDetail { OrderDetailId = 3, OrderId = 2, ProductId = 18, Quantity = 1, UnitPrice = 1800000m },
+                new OrderDetail { OrderDetailId = 4, OrderId = 2, ProductId = 20, Quantity = 2, UnitPrice = 250000m },
+
+                // Đơn hàng 3 (Total: 14,100,000) - Đại gia mua máy hút bụi xịn
+                new OrderDetail { OrderDetailId = 5, OrderId = 3, ProductId = 23, Quantity = 1, UnitPrice = 12000000m },
+                new OrderDetail { OrderDetailId = 6, OrderId = 3, ProductId = 21, Quantity = 1, UnitPrice = 2100000m },
+
+                // Đơn hàng 4 (Total: 650,000) - Đã hủy
+                new OrderDetail { OrderDetailId = 7, OrderId = 4, ProductId = 25, Quantity = 1, UnitPrice = 650000m },
+
+                // Đơn hàng 5 (Total: 4,300,000)
+                new OrderDetail { OrderDetailId = 8, OrderId = 5, ProductId = 26, Quantity = 1, UnitPrice = 1850000m },
+                new OrderDetail { OrderDetailId = 9, OrderId = 5, ProductId = 27, Quantity = 1, UnitPrice = 2200000m },
+                new OrderDetail { OrderDetailId = 10, OrderId = 5, ProductId = 20, Quantity = 1, UnitPrice = 250000m }
             );
         }
     }

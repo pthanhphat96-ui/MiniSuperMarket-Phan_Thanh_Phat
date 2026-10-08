@@ -19,13 +19,22 @@ namespace MiniSupermarket.API.Models
         public string ProductName { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; } // Giá bán
+        public decimal Price { get; set; }
 
-        public int StockQuantity { get; set; } // Số lượng tồn kho
+        public int StockQuantity { get; set; }
 
-        // Khóa ngoại liên kết tới bảng Categories
+        // =====================================
+        // QUAN HỆ VỚI BẢNG CATEGORIES
+        // =====================================
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
         public virtual Category? Category { get; set; }
+
+        // =====================================
+        // QUAN HỆ VỚI BẢNG BRANDS (Mới thêm)
+        // =====================================
+        public int BrandId { get; set; }
+        [ForeignKey("BrandId")]
+        public virtual Brand? Brand { get; set; }
     }
-}
+}   

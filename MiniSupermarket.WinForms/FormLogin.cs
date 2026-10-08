@@ -9,7 +9,7 @@ namespace MiniSupermarket.WinForms
         // Khởi tạo HttpClient trỏ đến địa chỉ của Web API Backend
         private static readonly HttpClient _client = new HttpClient
         {
-            BaseAddress = new Uri("https://localhost:7158/api/")
+            BaseAddress = new Uri("https://localhost:7158/api/") // Đảm bảo Port này khớp với Port API của bạn
         };
 
         public FormLogin()
@@ -48,23 +48,22 @@ namespace MiniSupermarket.WinForms
 
                     MessageBox.Show($"Đăng nhập thành công với quyền: {SessionManager.CurrentRole}", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                    // Mở Form quản lý Khách hàng và ẩn Form đăng nhập đi
-                    FormCustomerManagement frmCustomer = new FormCustomerManagement();
+                    // ==========================================
+                    // XỬ LÝ MỞ FORM SAU KHI ĐĂNG NHẬP
+                    // ==========================================
 
-                    this.Hide(); // Ẩn màn hình đăng nhập
-                    frmCustomer.Show(); // Hiển thị màn hình Khách hàng (ShowDialog để tạm dừng code ở đây chờ người dùng dùng xong)
+                    // Khởi tạo Form mà bạn muốn nó hiện lên đầu tiên (Tạm lấy Form Nhóm Hàng)
+                    FormCategoryManagement frmMain = new FormCategoryManagement();
 
-                    //this.Close(); // Đóng hẳn ứng dụng (tắt luôn FormLogin đang ẩn) khi người dùng tắt màn hình Khách hàng
+                    // 1. Ẩn ngay Form đăng nhập đi cho gọn
+                    this.Hide();
 
-                    // Mở Form quản lý Khách hàng và ẩn Form đăng nhập đi
-                    FormCategoryManagement frmCategory = new FormCategoryManagement();
+                    // 2. Hiện Form chính lên. Dùng ShowDialog() để ứng dụng "tạm dừng" ở dòng này
+                    // cho đến khi người dùng xài xong và bấm nút X tắt Form chính đi.
+                    frmMain.ShowDialog();
 
-                    //this.Hide(); // Ẩn màn hình đăng nhập
-                    frmCategory.Show(); // Hiển thị màn hình Khách hàng (ShowDialog để tạm dừng code ở đây chờ người dùng dùng xong)
-
-                    //this.Close(); // Đóng hẳn ứng dụng (tắt luôn FormLogin đang ẩn) khi người dùng tắt màn hình Khách hàng
-
-
+                    // 3. Khi người dùng tắt Form chính, code sẽ chạy tiếp xuống dòng này và tắt sạch ứng dụng.
+                    this.Close();
                 }
                 else
                 {
