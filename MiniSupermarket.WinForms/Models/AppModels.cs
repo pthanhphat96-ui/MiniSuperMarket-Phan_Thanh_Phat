@@ -21,4 +21,12 @@ namespace MiniSupermarket.WinForms.Models
         public int StockQuantity { get; set; }
         public bool IsActive { get; set; }
     }
+    public class CustomerDto
+    {
+        public int CustomerId { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Tier { get; set; } = "Thành viên"; // Hạng thẻ
+        public int RewardPoints { get; set; }
+    }
 }

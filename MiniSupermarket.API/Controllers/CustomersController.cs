@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
@@ -227,6 +227,24 @@ namespace MiniSupermarket.API.Controllers
             await _context.SaveChangesAsync();
 
             return NoContent();
+        }
+
+        [HttpGet("phone/{phone}")]
+        public async Task<IActionResult> GetByPhone(string phone)
+        {
+            var customer = await _context.Customers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.PhoneNumber == phone);
+
+            if (customer == null)
+            {
+                return NotFound(new
+                {
+                    message = "Không tìm thấy khách hàng trong CSDL!"
+                });
+            }
+
+            return Ok(customer);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using MiniSupermarket.WinForms.Models;
+using MiniSupermarket.WinForms.Models;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -20,6 +20,9 @@ namespace MiniSupermarket.WinForms
 
             KeyPreview = true;
             KeyDown += FormPOS_KeyDown;
+
+            // Bổ sung dòng này:
+            txtCustomerPhone.KeyDown += txtCustomerPhone_KeyDown;
 
             txtBarcode.Focus();
         }
@@ -345,6 +348,49 @@ namespace MiniSupermarket.WinForms
                 btnCheckout.PerformClick();
             }
         }
+        private async void txtCustomerPhone_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Chỉ xử lý khi người dùng nhấn phím Enter
+            if (e.KeyCode != Keys.Enter)
+                return;
+
+            e.SuppressKeyPress = true; // Ngăn tiếng "bíp" của Windows khi nhấn Enter
+
+            string phone = txtCustomerPhone.Text.Trim();
+
+            // Nếu để trống thì reset về Khách vãng lai
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                lblCustomerName.Text = "Khách vãng lai";
+                return;
+            }
+
+            try
+            {
+                // Gọi API tra cứu khách hàng. 
+                // Lưu ý: Đường dẫn "customers/phone/{phone}" có thể cần đổi lại cho khớp với Route API thực tế của bạn
+                var customer = await SessionManager.ApiClientService.Client.GetFromJsonAsync<CustomerDto>(
+                    $"customers/phone/{phone}");
+
+                if (customer != null)
+                {
+                    // Hiển thị tên khách và hạng thẻ
+                    lblCustomerName.Text = $"{customer.CustomerName} - Hạng: {customer.Tier}";
+                    txtBarcode.Focus(); // Quét thông tin xong thì đưa con trỏ về lại ô quét mã vạch
+                }
+            }
+            catch (Exception)
+            {
+                MessageBox.Show(
+                    "Không tìm thấy khách hàng với số điện thoại này hoặc lỗi máy chủ!",
+                    "Thông báo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                lblCustomerName.Text = "Khách vãng lai";
+                txtCustomerPhone.Focus();
+                txtCustomerPhone.SelectAll();
+            }
+        }
     }
 
     // Class CartItemDto dùng riêng cho giỏ hàng
@@ -356,6 +402,4 @@ namespace MiniSupermarket.WinForms
         public int Quantity { get; set; }
         public decimal TotalPrice => UnitPrice * Quantity;
     }
-
-    // Đã xóa class ProductDto bị trùng lặp ở đây
 }

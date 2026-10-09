@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MiniSupermarket.API.Data;
 using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Controllers
@@ -7,18 +9,32 @@ namespace MiniSupermarket.API.Controllers
     [ApiController]
     public class OrdersController : ControllerBase
     {
-        private static readonly List<Order> _orders = new();
+        private readonly SupermarketDbContext _context;
+
+        public OrdersController(SupermarketDbContext context)
+        {
+            _context = context;
+        }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return Ok(_orders);
+            var orders = await _context.Orders
+                .Include(o => o.Items)
+                .Include(o => o.Customer)
+                .AsNoTracking()
+                .ToListAsync();
+            return Ok(orders);
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var order = _orders.FirstOrDefault(o => o.OrderId == id);
+            var order = await _context.Orders
+                .Include(o => o.Items)
+                .Include(o => o.Customer)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.OrderId == id);
 
             if (order == null)
             {
@@ -29,7 +45,7 @@ namespace MiniSupermarket.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] Order newOrder)
+        public async Task<IActionResult> Create([FromBody] Order newOrder)
         {
             if (newOrder.Items == null || newOrder.Items.Count == 0)
             {
@@ -41,55 +57,37 @@ namespace MiniSupermarket.API.Controllers
                 return BadRequest(new { message = "Vui lòng chọn thu ngân!" });
             }
 
-            newOrder.OrderId = _orders.Count > 0
-                ? _orders.Max(o => o.OrderId) + 1
-                : 1;
-
             newOrder.CreatedAt = DateTime.UtcNow;
-
+            
             decimal subtotal = 0;
-            int itemIdCounter = 1;
-
             foreach (var item in newOrder.Items)
             {
-                item.OrderItemId = itemIdCounter++;
-                item.OrderId = newOrder.OrderId;
-
                 item.LineTotal = item.Quantity * item.UnitPrice;
-
                 subtotal += item.LineTotal;
             }
 
             newOrder.Subtotal = subtotal;
 
-            if (newOrder.Discount < 0)
-            {
-                newOrder.Discount = 0;
-            }
-
-            if (newOrder.Discount > newOrder.Subtotal)
-            {
-                newOrder.Discount = newOrder.Subtotal;
-            }
+            if (newOrder.Discount < 0) newOrder.Discount = 0;
+            if (newOrder.Discount > newOrder.Subtotal) newOrder.Discount = newOrder.Subtotal;
 
             newOrder.Total = newOrder.Subtotal - newOrder.Discount;
 
+            if (string.IsNullOrWhiteSpace(newOrder.PaymentMethod))
+                newOrder.PaymentMethod = "CASH";
+
+            if (string.IsNullOrWhiteSpace(newOrder.Status))
+                newOrder.Status = "PAID";
+
+            _context.Orders.Add(newOrder);
+            await _context.SaveChangesAsync();
+
+            // Cập nhật lại mã đơn hàng sau khi có OrderId
             if (string.IsNullOrWhiteSpace(newOrder.OrderCode))
             {
                 newOrder.OrderCode = $"HD{newOrder.OrderId:D5}";
+                await _context.SaveChangesAsync();
             }
-
-            if (string.IsNullOrWhiteSpace(newOrder.PaymentMethod))
-            {
-                newOrder.PaymentMethod = "CASH";
-            }
-
-            if (string.IsNullOrWhiteSpace(newOrder.Status))
-            {
-                newOrder.Status = "PAID";
-            }
-
-            _orders.Add(newOrder);
 
             return CreatedAtAction(
                 nameof(GetById),
@@ -99,9 +97,9 @@ namespace MiniSupermarket.API.Controllers
         }
 
         [HttpPut("{id}/status")]
-        public IActionResult UpdateStatus(int id, [FromBody] string status)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
         {
-            var order = _orders.FirstOrDefault(o => o.OrderId == id);
+            var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
             {
@@ -114,24 +112,25 @@ namespace MiniSupermarket.API.Controllers
             }
 
             order.Status = status;
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var order = _orders.FirstOrDefault(o => o.OrderId == id);
+            var order = await _context.Orders.FindAsync(id);
 
             if (order == null)
             {
                 return NotFound(new { message = "Không tìm thấy đơn hàng cần xóa!" });
             }
 
-            _orders.Remove(order);
+            _context.Orders.Remove(order);
+            await _context.SaveChangesAsync();
 
             return NoContent();
         }
     }
-
 }

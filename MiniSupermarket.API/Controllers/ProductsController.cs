@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MiniSupermarket.API.Data;
 using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Controllers
@@ -7,21 +9,26 @@ namespace MiniSupermarket.API.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        // Khởi tạo danh sách trống, chỉ đóng vai trò nơi lưu trữ tạm thời
-        private static readonly List<Product> _products = new();
+        private readonly SupermarketDbContext _context;
+
+        public ProductsController(SupermarketDbContext context)
+        {
+            _context = context;
+        }
 
         // 1. READ: Lấy toàn bộ danh sách sản phẩm
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            return Ok(_products);
+            var products = await _context.Products.AsNoTracking().ToListAsync();
+            return Ok(products);
         }
 
         // 2. READ: Lấy chi tiết một sản phẩm theo ID
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var product = _products.FirstOrDefault(p => p.ProductId == id);
+            var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm!" });
@@ -31,52 +38,68 @@ namespace MiniSupermarket.API.Controllers
 
         // 3. SEARCH: Tìm kiếm sản phẩm theo tên hoặc mã vạch
         [HttpGet("search")]
-        public IActionResult Search([FromQuery] string keyword)
+        public async Task<IActionResult> Search([FromQuery] string keyword)
         {
             if (string.IsNullOrWhiteSpace(keyword))
             {
                 return BadRequest(new { message = "Vui lòng nhập từ khóa!" });
             }
 
-            var result = _products
-                .Where(p => p.ProductName.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
-                            p.Barcode.Contains(keyword, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            var result = await _context.Products
+                .Where(p => p.ProductName.Contains(keyword) ||
+                            p.Barcode.Contains(keyword))
+                .AsNoTracking()
+                .ToListAsync();
 
             return Ok(result);
         }
 
+        // Lấy chi tiết sản phẩm theo mã vạch
+        [HttpGet("barcode/{barcode}")]
+        public async Task<IActionResult> GetByBarcode(string barcode)
+        {
+            var product = await _context.Products
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Barcode == barcode);
+
+            if (product == null)
+            {
+                return NotFound(new { message = "Không tìm thấy sản phẩm!" });
+            }
+            return Ok(product);
+        }
+
         // 4. CREATE: Thêm mới sản phẩm
         [HttpPost]
-        public IActionResult Create([FromBody] Product newProduct)
+        public async Task<IActionResult> Create([FromBody] Product newProduct)
         {
             if (string.IsNullOrWhiteSpace(newProduct.Barcode) || string.IsNullOrWhiteSpace(newProduct.ProductName))
             {
                 return BadRequest(new { message = "Mã vạch và tên sản phẩm không được trống!" });
             }
 
-            if (_products.Any(p => p.Barcode == newProduct.Barcode))
+            if (await _context.Products.AnyAsync(p => p.Barcode == newProduct.Barcode))
             {
                 return BadRequest(new { message = "Mã vạch này đã tồn tại trong hệ thống!" });
             }
 
-            newProduct.ProductId = _products.Count > 0 ? _products.Max(p => p.ProductId) + 1 : 1;
-            _products.Add(newProduct);
+            _context.Products.Add(newProduct);
+            await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = newProduct.ProductId }, newProduct);
         }
 
         // 5. UPDATE: Cập nhật thông tin sản phẩm
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] Product updateProduct)
+        public async Task<IActionResult> Update(int id, [FromBody] Product updateProduct)
         {
-            var product = _products.FirstOrDefault(p => p.ProductId == id);
+            var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm cần sửa!" });
             }
 
-            if (_products.Any(p => p.Barcode == updateProduct.Barcode && p.ProductId != id))
+            if (await _context.Products.AnyAsync(p => p.Barcode == updateProduct.Barcode && p.ProductId != id))
             {
                 return BadRequest(new { message = "Mã vạch cập nhật bị trùng với một sản phẩm khác!" });
             }
@@ -87,20 +110,23 @@ namespace MiniSupermarket.API.Controllers
             product.StockQuantity = updateProduct.StockQuantity;
             product.CategoryId = updateProduct.CategoryId;
 
+            await _context.SaveChangesAsync();
+
             return NoContent();
         }
 
         // 6. DELETE: Xóa sản phẩm theo ID
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var product = _products.FirstOrDefault(p => p.ProductId == id);
+            var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm cần xóa!" });
             }
 
-            _products.Remove(product);
+            _context.Products.Remove(product);
+            await _context.SaveChangesAsync();
             return NoContent();
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -291,23 +291,11 @@ namespace MiniSupermarket.WinForms
             object sender,
             EventArgs e)
         {
-            // Hiện tại POS chưa hoàn thiện
-            MessageBox.Show(
-                "Màn hình Quét mã vạch Barcode POS sẵn sàng!",
-                "Thông báo",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information
-            );
-
-            /*
-            // Sau này khi có FormPOS thì thay bằng:
-
             OpenChildForm(
                 new FormPOS(),
                 "BÁN HÀNG (POS)",
                 btnPOS
             );
-            */
         }
 
         // =========================================================
@@ -319,7 +307,7 @@ namespace MiniSupermarket.WinForms
             EventArgs e)
         {
             OpenChildForm(
-                new FormReportManagement(),
+                new FormReport(),
                 "BÁO CÁO DOANH THU",
                 btnReports
             );
