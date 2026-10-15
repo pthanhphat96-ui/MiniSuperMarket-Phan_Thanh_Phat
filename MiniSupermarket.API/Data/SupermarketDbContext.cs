@@ -93,25 +93,42 @@ namespace MiniSupermarket.API.Data
             );
 
             modelBuilder.Entity<Order>().HasData(
-                new Order { OrderId = 1, OrderCode = "HD00001", Subtotal = 2950000m, Discount = 0m, Total = 2950000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 1, 1, 14, 30, 0), CustomerId = 1, CashierId = 8 },
-                new Order { OrderId = 2, OrderCode = "HD00002", Subtotal = 2300000m, Discount = 0m, Total = 2300000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 1, 5, 9, 15, 0), CustomerId = 2, CashierId = 9 },
-                new Order { OrderId = 3, OrderCode = "HD00003", Subtotal = 14100000m, Discount = 0m, Total = 14100000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 1, 10, 11, 0, 0), CustomerId = 6, CashierId = 10 },
-                new Order { OrderId = 4, OrderCode = "HD00004", Subtotal = 650000m, Discount = 0m, Total = 650000m, PaymentMethod = "CASH", Status = "CANCELLED", CreatedAt = new DateTime(2026, 1, 12, 16, 45, 0), CustomerId = 9, CashierId = 11 },
-                new Order { OrderId = 5, OrderCode = "HD00005", Subtotal = 4300000m, Discount = 0m, Total = 4300000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 1, 15, 8, 20, 0), CustomerId = 13, CashierId = 12 }
-            );
+     new Order { OrderId = 6, OrderCode = "HD00006", Subtotal = 700000m, Discount = 0m, Total = 700000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 8, 15, 0), CustomerId = 1, CashierId = 8 },
+     new Order { OrderId = 7, OrderCode = "HD00007", Subtotal = 2500000m, Discount = 100000m, Total = 2400000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 9, 20, 0), CustomerId = 2, CashierId = 9 },
+     new Order { OrderId = 8, OrderCode = "HD00008", Subtotal = 1800000m, Discount = 0m, Total = 1800000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 10, 10, 0), CustomerId = 3, CashierId = 10 },
+     new Order { OrderId = 9, OrderCode = "HD00009", Subtotal = 500000m, Discount = 0m, Total = 500000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 11, 5, 0), CustomerId = 4, CashierId = 11 },
+     new Order { OrderId = 10, OrderCode = "HD00010", Subtotal = 2100000m, Discount = 100000m, Total = 2000000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 13, 15, 0), CustomerId = 5, CashierId = 12 },
+     new Order { OrderId = 11, OrderCode = "HD00011", Subtotal = 1200000m, Discount = 0m, Total = 1200000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 14, 0, 0), CustomerId = 6, CashierId = 13 },
+     new Order { OrderId = 12, OrderCode = "HD00012", Subtotal = 3500000m, Discount = 200000m, Total = 3300000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 15, 25, 0), CustomerId = 7, CashierId = 14 },
+     new Order { OrderId = 13, OrderCode = "HD00013", Subtotal = 650000m, Discount = 0m, Total = 650000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 16, 10, 0), CustomerId = 8, CashierId = 15 },
+     new Order { OrderId = 14, OrderCode = "HD00014", Subtotal = 1450000m, Discount = 0m, Total = 1450000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 17, 30, 0), CustomerId = 9, CashierId = 8 },
+     new Order { OrderId = 15, OrderCode = "HD00015", Subtotal = 2200000m, Discount = 0m, Total = 2200000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 19, 0, 0), CustomerId = 10, CashierId = 9 }
+ );
 
             modelBuilder.Entity<OrderItem>().HasData(
-                new OrderItem { OrderItemId = 1, OrderId = 1, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
-                new OrderItem { OrderItemId = 2, OrderId = 1, ProductId = 17, Quantity = 1, UnitPrice = 2500000m, LineTotal = 2500000m },
-                new OrderItem { OrderItemId = 3, OrderId = 2, ProductId = 18, Quantity = 1, UnitPrice = 1800000m, LineTotal = 1800000m },
-                new OrderItem { OrderItemId = 4, OrderId = 2, ProductId = 20, Quantity = 2, UnitPrice = 250000m, LineTotal = 500000m },
-                new OrderItem { OrderItemId = 5, OrderId = 3, ProductId = 23, Quantity = 1, UnitPrice = 12000000m, LineTotal = 12000000m },
-                new OrderItem { OrderItemId = 6, OrderId = 3, ProductId = 21, Quantity = 1, UnitPrice = 2100000m, LineTotal = 2100000m },
-                new OrderItem { OrderItemId = 7, OrderId = 4, ProductId = 25, Quantity = 1, UnitPrice = 650000m, LineTotal = 650000m },
-                new OrderItem { OrderItemId = 8, OrderId = 5, ProductId = 26, Quantity = 1, UnitPrice = 1850000m, LineTotal = 1850000m },
-                new OrderItem { OrderItemId = 9, OrderId = 5, ProductId = 27, Quantity = 1, UnitPrice = 2200000m, LineTotal = 2200000m },
-                new OrderItem { OrderItemId = 10, OrderId = 5, ProductId = 20, Quantity = 1, UnitPrice = 250000m, LineTotal = 250000m }
-            );
+     new OrderItem { OrderItemId = 11, OrderId = 6, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
+     new OrderItem { OrderItemId = 12, OrderId = 6, ProductId = 20, Quantity = 1, UnitPrice = 250000m, LineTotal = 250000m },
+
+     new OrderItem { OrderItemId = 13, OrderId = 7, ProductId = 17, Quantity = 1, UnitPrice = 2500000m, LineTotal = 2500000m },
+
+     new OrderItem { OrderItemId = 14, OrderId = 8, ProductId = 18, Quantity = 1, UnitPrice = 1800000m, LineTotal = 1800000m },
+
+     new OrderItem { OrderItemId = 15, OrderId = 9, ProductId = 20, Quantity = 2, UnitPrice = 250000m, LineTotal = 500000m },
+
+     new OrderItem { OrderItemId = 16, OrderId = 10, ProductId = 21, Quantity = 1, UnitPrice = 2100000m, LineTotal = 2100000m },
+
+     new OrderItem { OrderItemId = 17, OrderId = 11, ProductId = 24, Quantity = 1, UnitPrice = 550000m, LineTotal = 550000m },
+     new OrderItem { OrderItemId = 18, OrderId = 11, ProductId = 30, Quantity = 1, UnitPrice = 120000m, LineTotal = 120000m },
+     new OrderItem { OrderItemId = 19, OrderId = 11, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
+
+     new OrderItem { OrderItemId = 20, OrderId = 12, ProductId = 22, Quantity = 1, UnitPrice = 3500000m, LineTotal = 3500000m },
+
+     new OrderItem { OrderItemId = 21, OrderId = 13, ProductId = 25, Quantity = 1, UnitPrice = 650000m, LineTotal = 650000m },
+
+     new OrderItem { OrderItemId = 22, OrderId = 14, ProductId = 28, Quantity = 1, UnitPrice = 1450000m, LineTotal = 1450000m },
+
+     new OrderItem { OrderItemId = 23, OrderId = 15, ProductId = 27, Quantity = 1, UnitPrice = 2200000m, LineTotal = 2200000m }
+ );
 
             modelBuilder.Entity<User>().HasData(
                 new User { UserId = 1, Username = "admin01", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Nguyễn Văn Admin", Email = "admin01@gmail.com", Phone = "0901000001", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0), RoleId = 1 },

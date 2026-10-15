@@ -418,68 +418,133 @@ namespace MiniSupermarket.API.Migrations
                     b.HasData(
                         new
                         {
-                            OrderId = 1,
+                            OrderId = 6,
                             CashierId = 8,
-                            CreatedAt = new DateTime(2026, 1, 1, 14, 30, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2026, 10, 15, 8, 15, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 1,
                             Discount = 0m,
-                            OrderCode = "HD00001",
+                            OrderCode = "HD00006",
                             PaymentMethod = "CASH",
                             Status = "PAID",
-                            Subtotal = 2950000m,
-                            Total = 2950000m
+                            Subtotal = 700000m,
+                            Total = 700000m
                         },
                         new
                         {
-                            OrderId = 2,
+                            OrderId = 7,
                             CashierId = 9,
-                            CreatedAt = new DateTime(2026, 1, 5, 9, 15, 0, 0, DateTimeKind.Unspecified),
+                            CreatedAt = new DateTime(2026, 10, 15, 9, 20, 0, 0, DateTimeKind.Unspecified),
                             CustomerId = 2,
-                            Discount = 0m,
-                            OrderCode = "HD00002",
+                            Discount = 100000m,
+                            OrderCode = "HD00007",
                             PaymentMethod = "CARD",
                             Status = "PAID",
-                            Subtotal = 2300000m,
-                            Total = 2300000m
+                            Subtotal = 2500000m,
+                            Total = 2400000m
                         },
                         new
                         {
-                            OrderId = 3,
+                            OrderId = 8,
                             CashierId = 10,
-                            CreatedAt = new DateTime(2026, 1, 10, 11, 0, 0, 0, DateTimeKind.Unspecified),
-                            CustomerId = 6,
+                            CreatedAt = new DateTime(2026, 10, 15, 10, 10, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 3,
                             Discount = 0m,
-                            OrderCode = "HD00003",
+                            OrderCode = "HD00008",
+                            PaymentMethod = "MOMO",
+                            Status = "PAID",
+                            Subtotal = 1800000m,
+                            Total = 1800000m
+                        },
+                        new
+                        {
+                            OrderId = 9,
+                            CashierId = 11,
+                            CreatedAt = new DateTime(2026, 10, 15, 11, 5, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 4,
+                            Discount = 0m,
+                            OrderCode = "HD00009",
+                            PaymentMethod = "CASH",
+                            Status = "PAID",
+                            Subtotal = 500000m,
+                            Total = 500000m
+                        },
+                        new
+                        {
+                            OrderId = 10,
+                            CashierId = 12,
+                            CreatedAt = new DateTime(2026, 10, 15, 13, 15, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 5,
+                            Discount = 100000m,
+                            OrderCode = "HD00010",
                             PaymentMethod = "BANK_TRANSFER",
                             Status = "PAID",
-                            Subtotal = 14100000m,
-                            Total = 14100000m
+                            Subtotal = 2100000m,
+                            Total = 2000000m
                         },
                         new
                         {
-                            OrderId = 4,
-                            CashierId = 11,
-                            CreatedAt = new DateTime(2026, 1, 12, 16, 45, 0, 0, DateTimeKind.Unspecified),
-                            CustomerId = 9,
+                            OrderId = 11,
+                            CashierId = 13,
+                            CreatedAt = new DateTime(2026, 10, 15, 14, 0, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 6,
                             Discount = 0m,
-                            OrderCode = "HD00004",
+                            OrderCode = "HD00011",
                             PaymentMethod = "CASH",
-                            Status = "CANCELLED",
+                            Status = "PAID",
+                            Subtotal = 1200000m,
+                            Total = 1200000m
+                        },
+                        new
+                        {
+                            OrderId = 12,
+                            CashierId = 14,
+                            CreatedAt = new DateTime(2026, 10, 15, 15, 25, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 7,
+                            Discount = 200000m,
+                            OrderCode = "HD00012",
+                            PaymentMethod = "CARD",
+                            Status = "PAID",
+                            Subtotal = 3500000m,
+                            Total = 3300000m
+                        },
+                        new
+                        {
+                            OrderId = 13,
+                            CashierId = 15,
+                            CreatedAt = new DateTime(2026, 10, 15, 16, 10, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 8,
+                            Discount = 0m,
+                            OrderCode = "HD00013",
+                            PaymentMethod = "MOMO",
+                            Status = "PAID",
                             Subtotal = 650000m,
                             Total = 650000m
                         },
                         new
                         {
-                            OrderId = 5,
-                            CashierId = 12,
-                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 0, 0, DateTimeKind.Unspecified),
-                            CustomerId = 13,
+                            OrderId = 14,
+                            CashierId = 8,
+                            CreatedAt = new DateTime(2026, 10, 15, 17, 30, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 9,
                             Discount = 0m,
-                            OrderCode = "HD00005",
-                            PaymentMethod = "MOMO",
+                            OrderCode = "HD00014",
+                            PaymentMethod = "CASH",
                             Status = "PAID",
-                            Subtotal = 4300000m,
-                            Total = 4300000m
+                            Subtotal = 1450000m,
+                            Total = 1450000m
+                        },
+                        new
+                        {
+                            OrderId = 15,
+                            CashierId = 9,
+                            CreatedAt = new DateTime(2026, 10, 15, 19, 0, 0, 0, DateTimeKind.Unspecified),
+                            CustomerId = 10,
+                            Discount = 0m,
+                            OrderCode = "HD00015",
+                            PaymentMethod = "BANK_TRANSFER",
+                            Status = "PAID",
+                            Subtotal = 2200000m,
+                            Total = 2200000m
                         });
                 });
 
@@ -517,93 +582,120 @@ namespace MiniSupermarket.API.Migrations
                     b.HasData(
                         new
                         {
-                            OrderItemId = 1,
+                            OrderItemId = 11,
                             LineTotal = 450000m,
-                            OrderId = 1,
+                            OrderId = 6,
                             ProductId = 16,
                             Quantity = 1,
                             UnitPrice = 450000m
                         },
                         new
                         {
-                            OrderItemId = 2,
+                            OrderItemId = 12,
+                            LineTotal = 250000m,
+                            OrderId = 6,
+                            ProductId = 20,
+                            Quantity = 1,
+                            UnitPrice = 250000m
+                        },
+                        new
+                        {
+                            OrderItemId = 13,
                             LineTotal = 2500000m,
-                            OrderId = 1,
+                            OrderId = 7,
                             ProductId = 17,
                             Quantity = 1,
                             UnitPrice = 2500000m
                         },
                         new
                         {
-                            OrderItemId = 3,
+                            OrderItemId = 14,
                             LineTotal = 1800000m,
-                            OrderId = 2,
+                            OrderId = 8,
                             ProductId = 18,
                             Quantity = 1,
                             UnitPrice = 1800000m
                         },
                         new
                         {
-                            OrderItemId = 4,
+                            OrderItemId = 15,
                             LineTotal = 500000m,
-                            OrderId = 2,
+                            OrderId = 9,
                             ProductId = 20,
                             Quantity = 2,
                             UnitPrice = 250000m
                         },
                         new
                         {
-                            OrderItemId = 5,
-                            LineTotal = 12000000m,
-                            OrderId = 3,
-                            ProductId = 23,
-                            Quantity = 1,
-                            UnitPrice = 12000000m
-                        },
-                        new
-                        {
-                            OrderItemId = 6,
+                            OrderItemId = 16,
                             LineTotal = 2100000m,
-                            OrderId = 3,
+                            OrderId = 10,
                             ProductId = 21,
                             Quantity = 1,
                             UnitPrice = 2100000m
                         },
                         new
                         {
-                            OrderItemId = 7,
+                            OrderItemId = 17,
+                            LineTotal = 550000m,
+                            OrderId = 11,
+                            ProductId = 24,
+                            Quantity = 1,
+                            UnitPrice = 550000m
+                        },
+                        new
+                        {
+                            OrderItemId = 18,
+                            LineTotal = 120000m,
+                            OrderId = 11,
+                            ProductId = 30,
+                            Quantity = 1,
+                            UnitPrice = 120000m
+                        },
+                        new
+                        {
+                            OrderItemId = 19,
+                            LineTotal = 450000m,
+                            OrderId = 11,
+                            ProductId = 16,
+                            Quantity = 1,
+                            UnitPrice = 450000m
+                        },
+                        new
+                        {
+                            OrderItemId = 20,
+                            LineTotal = 3500000m,
+                            OrderId = 12,
+                            ProductId = 22,
+                            Quantity = 1,
+                            UnitPrice = 3500000m
+                        },
+                        new
+                        {
+                            OrderItemId = 21,
                             LineTotal = 650000m,
-                            OrderId = 4,
+                            OrderId = 13,
                             ProductId = 25,
                             Quantity = 1,
                             UnitPrice = 650000m
                         },
                         new
                         {
-                            OrderItemId = 8,
-                            LineTotal = 1850000m,
-                            OrderId = 5,
-                            ProductId = 26,
+                            OrderItemId = 22,
+                            LineTotal = 1450000m,
+                            OrderId = 14,
+                            ProductId = 28,
                             Quantity = 1,
-                            UnitPrice = 1850000m
+                            UnitPrice = 1450000m
                         },
                         new
                         {
-                            OrderItemId = 9,
+                            OrderItemId = 23,
                             LineTotal = 2200000m,
-                            OrderId = 5,
+                            OrderId = 15,
                             ProductId = 27,
                             Quantity = 1,
                             UnitPrice = 2200000m
-                        },
-                        new
-                        {
-                            OrderItemId = 10,
-                            LineTotal = 250000m,
-                            OrderId = 5,
-                            ProductId = 20,
-                            Quantity = 1,
-                            UnitPrice = 250000m
                         });
                 });
 

@@ -12,6 +12,7 @@ namespace MiniSupermarket.WinForms
     public partial class FormPOS : Form
     {
         private readonly List<CartItemDto> _cart = new();
+        private int? _currentCustomerId = null;
 
         public FormPOS()
         {
@@ -21,7 +22,6 @@ namespace MiniSupermarket.WinForms
             KeyPreview = true;
             KeyDown += FormPOS_KeyDown;
 
-            // Bổ sung dòng này:
             txtCustomerPhone.KeyDown += txtCustomerPhone_KeyDown;
 
             txtBarcode.Focus();
@@ -96,7 +96,6 @@ namespace MiniSupermarket.WinForms
         {
             try
             {
-                // Đã sửa: Thêm SessionManager. vào trước ApiClientService
                 var product = await SessionManager.ApiClientService.Client.GetFromJsonAsync<ProductDto>(
                     $"products/barcode/{barcode}");
 
@@ -254,24 +253,30 @@ namespace MiniSupermarket.WinForms
                 return;
             }
 
+            // [ĐÃ SỬA] Cấu trúc dữ liệu gửi lên phải khớp 100% với Model Order ở API
             var orderRequest = new
             {
-                CashierUsername = SessionManager.CurrentUsername,
-                CustomerPhone = txtCustomerPhone.Text.Trim(),
-                CashReceived = cashReceived,
+                OrderCode = "TEMP", // Để tránh lỗi [Required] từ API
+                CustomerId = _currentCustomerId,
+                CashierId = 1, // LƯU Ý: Đang fix cứng là 1 để test. Khi test thành công, hãy đổi thành ID nhân viên thực tế.
+                Subtotal = total,
+                Total = total,
+                Discount = 0,
+                PaymentMethod = "CASH",
+                Status = "PAID",
                 Items = _cart.Select(i => new
                 {
-                    i.ProductId,
-                    i.Quantity,
-                    i.UnitPrice
+                    ProductId = i.ProductId,
+                    Quantity = i.Quantity,
+                    UnitPrice = i.UnitPrice
                 }).ToList()
             };
 
             try
             {
-                // Đã sửa: Thêm SessionManager. vào trước ApiClientService
+                // [ĐÃ SỬA] Đổi URL từ "orders/checkout" thành "orders"
                 var response = await SessionManager.ApiClientService.Client.PostAsJsonAsync(
-                    "orders/checkout",
+                    "orders",
                     orderRequest);
 
                 if (response.IsSuccessStatusCode)
@@ -283,23 +288,21 @@ namespace MiniSupermarket.WinForms
                         MessageBoxIcon.Information);
 
                     _cart.Clear();
-
                     UpdateCartDisplay();
-
                     txtCashReceived.Clear();
                     txtCustomerPhone.Clear();
 
                     lblCustomerName.Text = "Khách vãng lai";
-
+                    _currentCustomerId = null;
                     txtBarcode.Focus();
                 }
                 else
                 {
+                    // [ĐÃ SỬA] In ra chi tiết lỗi từ API để dễ dàng biết sai ở đâu
                     string error = await response.Content.ReadAsStringAsync();
-
                     MessageBox.Show(
-                        "Thanh toán thất bại từ máy chủ!\n\n" + error,
-                        "Lỗi",
+                        $"Thanh toán thất bại từ máy chủ!\nMã lỗi: {(int)response.StatusCode}\nChi tiết: {error}",
+                        "Lỗi API",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
                 }
@@ -329,14 +332,12 @@ namespace MiniSupermarket.WinForms
                 return;
 
             _cart.Clear();
-
             UpdateCartDisplay();
-
             txtCashReceived.Clear();
             txtCustomerPhone.Clear();
 
             lblCustomerName.Text = "Khách vãng lai";
-
+            _currentCustomerId = null;
             txtBarcode.Focus();
         }
 
@@ -348,35 +349,35 @@ namespace MiniSupermarket.WinForms
                 btnCheckout.PerformClick();
             }
         }
+
         private async void txtCustomerPhone_KeyDown(object sender, KeyEventArgs e)
         {
-            // Chỉ xử lý khi người dùng nhấn phím Enter
             if (e.KeyCode != Keys.Enter)
                 return;
 
-            e.SuppressKeyPress = true; // Ngăn tiếng "bíp" của Windows khi nhấn Enter
-
+            e.SuppressKeyPress = true;
             string phone = txtCustomerPhone.Text.Trim();
 
-            // Nếu để trống thì reset về Khách vãng lai
             if (string.IsNullOrWhiteSpace(phone))
             {
                 lblCustomerName.Text = "Khách vãng lai";
+                _currentCustomerId = null;
                 return;
             }
 
             try
             {
-                // Gọi API tra cứu khách hàng. 
-                // Lưu ý: Đường dẫn "customers/phone/{phone}" có thể cần đổi lại cho khớp với Route API thực tế của bạn
                 var customer = await SessionManager.ApiClientService.Client.GetFromJsonAsync<CustomerDto>(
                     $"customers/phone/{phone}");
 
                 if (customer != null)
                 {
-                    // Hiển thị tên khách và hạng thẻ
                     lblCustomerName.Text = $"{customer.CustomerName} - Hạng: {customer.Tier}";
-                    txtBarcode.Focus(); // Quét thông tin xong thì đưa con trỏ về lại ô quét mã vạch
+
+                    // [ĐÃ SỬA] Bắt buộc phải lưu lại ID thì đơn hàng mới có mã khách
+                    _currentCustomerId = customer.CustomerId;
+
+                    txtBarcode.Focus();
                 }
             }
             catch (Exception)
@@ -389,11 +390,11 @@ namespace MiniSupermarket.WinForms
                 lblCustomerName.Text = "Khách vãng lai";
                 txtCustomerPhone.Focus();
                 txtCustomerPhone.SelectAll();
+                _currentCustomerId = null;
             }
         }
     }
 
-    // Class CartItemDto dùng riêng cho giỏ hàng
     public class CartItemDto
     {
         public int ProductId { get; set; }
