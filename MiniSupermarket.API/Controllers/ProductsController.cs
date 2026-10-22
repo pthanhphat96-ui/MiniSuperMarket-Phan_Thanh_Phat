@@ -16,11 +16,24 @@ namespace MiniSupermarket.API.Controllers
             _context = context;
         }
 
-        // 1. READ: Lấy toàn bộ danh sách sản phẩm
+        // 1. READ: Lấy toàn bộ danh sách sản phẩm kèm thông tin Nhóm hàng (Category)
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int? categoryId = null)
         {
-            var products = await _context.Products.AsNoTracking().ToListAsync();
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            var products = await query
+                .OrderBy(p => p.ProductId)
+                .ToListAsync();
+
             return Ok(products);
         }
 
@@ -28,7 +41,11 @@ namespace MiniSupermarket.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var product = await _context.Products.FindAsync(id);
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProductId == id);
+
             if (product == null)
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm!" });
@@ -36,21 +53,27 @@ namespace MiniSupermarket.API.Controllers
             return Ok(product);
         }
 
-        // 3. SEARCH: Tìm kiếm sản phẩm theo tên hoặc mã vạch
+        // 3. SEARCH: Tìm kiếm sản phẩm theo tên, mã vạch hoặc lọc theo nhóm hàng
         [HttpGet("search")]
-        public async Task<IActionResult> Search([FromQuery] string keyword)
+        public async Task<IActionResult> Search([FromQuery] string? keyword, [FromQuery] int? categoryId = null)
         {
-            if (string.IsNullOrWhiteSpace(keyword))
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
             {
-                return BadRequest(new { message = "Vui lòng nhập từ khóa!" });
+                string kw = keyword.Trim();
+                query = query.Where(p => p.ProductName.Contains(kw) || p.Barcode.Contains(kw));
             }
 
-            var result = await _context.Products
-                .Where(p => p.ProductName.Contains(keyword) ||
-                            p.Barcode.Contains(keyword))
-                .AsNoTracking()
-                .ToListAsync();
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
 
+            var result = await query.OrderBy(p => p.ProductId).ToListAsync();
             return Ok(result);
         }
 
@@ -59,6 +82,7 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> GetByBarcode(string barcode)
         {
             var product = await _context.Products
+                .Include(p => p.Category)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Barcode == barcode);
 
@@ -81,6 +105,11 @@ namespace MiniSupermarket.API.Controllers
             if (await _context.Products.AnyAsync(p => p.Barcode == newProduct.Barcode))
             {
                 return BadRequest(new { message = "Mã vạch này đã tồn tại trong hệ thống!" });
+            }
+
+            if (newProduct.BrandId <= 0)
+            {
+                newProduct.BrandId = 1; // Mặc định BrandId = 1 nếu không chọn Brand
             }
 
             _context.Products.Add(newProduct);
@@ -109,6 +138,10 @@ namespace MiniSupermarket.API.Controllers
             product.Price = updateProduct.Price;
             product.StockQuantity = updateProduct.StockQuantity;
             product.CategoryId = updateProduct.CategoryId;
+            if (updateProduct.BrandId > 0)
+            {
+                product.BrandId = updateProduct.BrandId;
+            }
 
             await _context.SaveChangesAsync();
 

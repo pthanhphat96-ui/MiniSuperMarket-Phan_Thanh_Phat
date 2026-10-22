@@ -1,4 +1,3 @@
-﻿
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -33,6 +32,19 @@ namespace MiniSupermarket.API.Models
         public string Status { get; set; } = "PAID";          // PAID, CANCELLED, REFUNDED
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Các cột tương thích chuẩn Buổi 5 (Stored Procedure & POS Checkout)
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        [StringLength(50)]
+        public string CashierUsername { get; set; } = string.Empty;
+
+        public int TotalItems { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal FinalAmount { get; set; }
+
+        public int RewardPoints { get; set; }
 
         public int? CustomerId { get; set; }               // null = khách vãng lai
         [ForeignKey("CustomerId")]

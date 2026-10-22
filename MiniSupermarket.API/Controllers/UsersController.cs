@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
@@ -8,7 +8,7 @@ namespace MiniSupermarket.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,ADMIN")]
     public class UsersController : ControllerBase
     {
         private readonly SupermarketDbContext _db;
@@ -16,6 +16,17 @@ namespace MiniSupermarket.API.Controllers
         public UsersController(SupermarketDbContext db)
         {
             _db = db;
+        }
+
+        private static string NormalizeRoleName(string? roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName)) return "Cashier";
+            return roleName.Trim().ToUpperInvariant() switch
+            {
+                "ADMIN" => "Admin",
+                "WAREHOUSE" => "Warehouse",
+                _ => "Cashier"
+            };
         }
 
         // GET: api/Users
@@ -26,23 +37,24 @@ namespace MiniSupermarket.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
-                q = q.Where(u => u.Username.Contains(keyword) || u.FullName.Contains(keyword) || (u.Email != null && u.Email.Contains(keyword)));
+                string kw = keyword.Trim();
+                q = q.Where(u => u.Username.Contains(kw) || u.FullName.Contains(kw) || (u.Email != null && u.Email.Contains(kw)));
             }
 
-            var list = await q.OrderBy(u => u.UserId)
-                .Select(u => new
-                {
-                    u.UserId,
-                    u.Username,
-                    u.FullName,
-                    u.Email,
-                    u.Phone,
-                    u.IsActive,
-                    u.RoleId,
-                    Role = u.Role != null ? u.Role.RoleName : "CASHIER",
-                    u.CreatedAt
-                })
-                .ToListAsync();
+            var rawList = await q.OrderBy(u => u.UserId).ToListAsync();
+            var list = rawList.Select(u => new
+            {
+                Id = u.UserId,
+                u.UserId,
+                u.Username,
+                u.FullName,
+                Email = u.Email ?? string.Empty,
+                Phone = u.Phone ?? string.Empty,
+                u.IsActive,
+                u.RoleId,
+                Role = NormalizeRoleName(u.Role?.RoleName),
+                u.CreatedAt
+            }).ToList();
 
             return Ok(list);
         }
@@ -52,18 +64,19 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> GetById(int id)
         {
             var u = await _db.Users.Include(x => x.Role).AsNoTracking().FirstOrDefaultAsync(x => x.UserId == id);
-            if (u == null) return NotFound("Không tìm thấy người dùng");
+            if (u == null) return NotFound(new { message = "Không tìm thấy người dùng" });
 
             return Ok(new
             {
+                Id = u.UserId,
                 u.UserId,
                 u.Username,
                 u.FullName,
-                u.Email,
-                u.Phone,
+                Email = u.Email ?? string.Empty,
+                Phone = u.Phone ?? string.Empty,
                 u.IsActive,
                 u.RoleId,
-                Role = u.Role != null ? u.Role.RoleName : "CASHIER",
+                Role = NormalizeRoleName(u.Role?.RoleName),
                 u.CreatedAt
             });
         }
@@ -73,21 +86,20 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
-                return BadRequest("Tên đăng nhập và mật khẩu không được để trống");
+                return BadRequest(new { message = "Tên đăng nhập và mật khẩu không được để trống" });
 
-            if (await _db.Users.AnyAsync(u => u.Username == dto.Username))
-                return Conflict("Tên đăng nhập đã tồn tại");
+            if (await _db.Users.AnyAsync(u => u.Username == dto.Username.Trim()))
+                return Conflict(new { message = "Tên đăng nhập đã tồn tại" });
 
-            // Tìm RoleId theo tên role ("ADMIN", "WAREHOUSE", "CASHIER")
-            var targetRoleName = (dto.Role ?? "CASHIER").ToUpper();
-            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == targetRoleName)
-                       ?? await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == "CASHIER");
+            var targetRoleName = (dto.Role ?? "CASHIER").Trim().ToUpperInvariant();
+            var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName.ToUpper() == targetRoleName)
+                       ?? await _db.Roles.FirstOrDefaultAsync(r => r.RoleName.ToUpper() == "CASHIER");
 
             var user = new User
             {
                 Username = dto.Username.Trim(),
-                PasswordHash = HashPassword(dto.Password),
-                FullName = string.IsNullOrWhiteSpace(dto.FullName) ? dto.Username : dto.FullName.Trim(),
+                PasswordHash = HashPassword(dto.Password.Trim()),
+                FullName = string.IsNullOrWhiteSpace(dto.FullName) ? dto.Username.Trim() : dto.FullName.Trim(),
                 Email = dto.Email?.Trim(),
                 Phone = dto.Phone?.Trim(),
                 IsActive = dto.IsActive,
@@ -100,14 +112,15 @@ namespace MiniSupermarket.API.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = user.UserId }, new
             {
+                Id = user.UserId,
                 user.UserId,
                 user.Username,
                 user.FullName,
-                user.Email,
-                user.Phone,
+                Email = user.Email ?? string.Empty,
+                Phone = user.Phone ?? string.Empty,
                 user.IsActive,
                 user.RoleId,
-                Role = role != null ? role.RoleName : "CASHIER",
+                Role = NormalizeRoleName(role?.RoleName),
                 user.CreatedAt
             });
         }
@@ -117,7 +130,7 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> Update(int id, [FromBody] UpdateUserDto dto)
         {
             var user = await _db.Users.FindAsync(id);
-            if (user == null) return NotFound("Không tìm thấy người dùng");
+            if (user == null) return NotFound(new { message = "Không tìm thấy người dùng" });
 
             if (!string.IsNullOrWhiteSpace(dto.FullName))
                 user.FullName = dto.FullName.Trim();
@@ -128,20 +141,63 @@ namespace MiniSupermarket.API.Controllers
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
-                user.PasswordHash = HashPassword(dto.Password);
+                user.PasswordHash = HashPassword(dto.Password.Trim());
             }
 
             if (!string.IsNullOrWhiteSpace(dto.Role))
             {
-                var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role.ToUpper());
+                string roleUpper = dto.Role.Trim().ToUpperInvariant();
+                var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleName.ToUpper() == roleUpper);
                 if (role != null) user.RoleId = role.RoleId;
             }
 
             await _db.SaveChangesAsync();
-            return NoContent();
+            return Ok(new { message = "Cập nhật thông tin tài khoản thành công!" });
         }
 
-        private static string HashPassword(string password)
+        // PUT: api/Users/5/toggle-status
+        [HttpPut("{id:int}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id, [FromBody] ToggleStatusDto? dto)
+        {
+            var user = await _db.Users.FindAsync(id);
+            if (user == null) return NotFound(new { message = "Không tìm thấy tài khoản cần khóa/mở khóa!" });
+
+            bool newStatus = dto?.IsActive ?? !user.IsActive;
+            user.IsActive = newStatus;
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                Id = user.UserId,
+                user.UserId,
+                user.Username,
+                user.IsActive,
+                message = user.IsActive
+                    ? $"Đã mở khóa tài khoản '{user.Username}' thành công!"
+                    : $"Đã khóa tài khoản '{user.Username}' thành công!"
+            });
+        }
+
+        // PUT: api/Users/5/reset-password
+        [HttpPut("{id:int}/reset-password")]
+        public async Task<IActionResult> ResetPassword(int id, [FromBody] ResetPasswordDto dto)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.Password))
+            {
+                return BadRequest(new { message = "Mật khẩu mới không được để trống!" });
+            }
+
+            var user = await _db.Users.FindAsync(id);
+            if (user == null) return NotFound(new { message = "Không tìm thấy tài khoản!" });
+
+            user.PasswordHash = HashPassword(dto.Password.Trim());
+            await _db.SaveChangesAsync();
+
+            return Ok(new { message = $"Đã đặt lại mật khẩu cho tài khoản '{user.Username}' thành công!" });
+        }
+
+        public static string HashPassword(string password)
         {
             using var sha256 = System.Security.Cryptography.SHA256.Create();
             var bytes = System.Text.Encoding.UTF8.GetBytes(password);
@@ -154,18 +210,17 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var user = await _db.Users.FindAsync(id);
-            if (user == null) return NotFound("Không tìm thấy người dùng");
+            if (user == null) return NotFound(new { message = "Không tìm thấy người dùng" });
 
-            // Không cho xóa chính tài khoản admin gốc
-            if (user.Username.Equals("admin", StringComparison.OrdinalIgnoreCase))
-                return BadRequest("Không thể xóa tài khoản quản trị tối cao admin");
+            if (user.Username.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+                user.Username.Equals("admin01", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Không thể xóa tài khoản quản trị tối cao" });
 
-            // Kiểm tra xem đã từng xuất hóa đơn chưa
             if (await _db.Orders.AnyAsync(o => o.CashierId == id))
             {
                 user.IsActive = false;
                 await _db.SaveChangesAsync();
-                return Ok(new { message = "Người dùng đã có hóa đơn trong hệ thống, chỉ vô hiệu hóa tài khoản" });
+                return Ok(new { message = "Người dùng đã có hóa đơn trong hệ thống, đã chuyển sang trạng thái khóa tài khoản" });
             }
 
             _db.Users.Remove(user);
@@ -193,5 +248,15 @@ namespace MiniSupermarket.API.Controllers
         public string? Phone { get; set; }
         public string? Role { get; set; }
         public bool IsActive { get; set; } = true;
+    }
+
+    public class ToggleStatusDto
+    {
+        public bool? IsActive { get; set; }
+    }
+
+    public class ResetPasswordDto
+    {
+        public string Password { get; set; } = string.Empty;
     }
 }

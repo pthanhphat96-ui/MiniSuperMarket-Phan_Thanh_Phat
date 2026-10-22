@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Json;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace MiniSupermarket.WinForms
@@ -10,13 +10,12 @@ namespace MiniSupermarket.WinForms
             BaseAddress = new Uri("https://localhost:7158/api/")
         };
 
-
-    public FormLogin()
+        public FormLogin()
         {
             InitializeComponent();
         }
 
-        private async void btnLogin_Click(object sender, EventArgs e)
+        private async void btnLogin_Click(object? sender, EventArgs e)
         {
             string username = txtUser.Text.Trim();
             string password = txtPass.Text.Trim();
@@ -34,6 +33,9 @@ namespace MiniSupermarket.WinForms
 
             try
             {
+                btnLogin.Enabled = false;
+                btnLogin.Text = "Đang xác thực...";
+
                 var loginData = new
                 {
                     Username = username,
@@ -44,18 +46,29 @@ namespace MiniSupermarket.WinForms
                     "auth/login",
                     loginData);
 
+                var jsonString = await response.Content.ReadAsStringAsync();
+
                 if (!response.IsSuccessStatusCode)
                 {
+                    string errMsg = "Sai tài khoản hoặc mật khẩu!";
+                    try
+                    {
+                        using var errDoc = JsonDocument.Parse(jsonString);
+                        if (errDoc.RootElement.TryGetProperty("message", out var msgProp))
+                        {
+                            errMsg = msgProp.GetString() ?? errMsg;
+                        }
+                    }
+                    catch { }
+
                     MessageBox.Show(
-                        "Sai tài khoản hoặc mật khẩu!",
+                        errMsg,
                         "Đăng nhập thất bại",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
 
                     return;
                 }
-
-                var jsonString = await response.Content.ReadAsStringAsync();
 
                 using var doc = JsonDocument.Parse(jsonString);
 
@@ -67,18 +80,12 @@ namespace MiniSupermarket.WinForms
                     doc.RootElement.GetProperty("role").GetString()
                     ?? string.Empty;
 
-                MessageBox.Show(
-                    $"Đăng nhập thành công với quyền: {SessionManager.CurrentRole}",
-                    "Thông báo",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                SessionManager.CurrentUsername = username;
 
                 FormMainShell frmMain = new FormMainShell();
 
                 this.Hide();
-
                 frmMain.ShowDialog();
-
                 this.Close();
             }
             catch (Exception ex)
@@ -89,7 +96,14 @@ namespace MiniSupermarket.WinForms
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
+            finally
+            {
+                if (!this.IsDisposed)
+                {
+                    btnLogin.Enabled = true;
+                    btnLogin.Text = "ĐĂNG NHẬP HỆ THỐNG";
+                }
+            }
         }
     }
-
 }

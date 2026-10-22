@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -9,21 +10,24 @@ namespace MiniSupermarket.WinForms
 {
     public partial class FormUserManagement : Form
     {
+        private int _selectedUserId = 0;
+        private bool _selectedIsActive = true;
+
         public FormUserManagement()
         {
             InitializeComponent();
 
             cboRole.Items.AddRange(new string[]
             {
-            "Admin",
-            "Cashier",
-            "Warehouse"
+                "Admin",
+                "Cashier",
+                "Warehouse"
             });
 
             cboRole.SelectedIndex = 1;
         }
 
-        private async void FormUserManagement_Load(object sender, EventArgs e)
+        private async void FormUserManagement_Load(object? sender, EventArgs e)
         {
             await LoadUsersAsync();
         }
@@ -32,28 +36,66 @@ namespace MiniSupermarket.WinForms
         {
             try
             {
-                var users = await ApiClientService.Client.GetFromJsonAsync<List<UserDto>>("users");
+                var users = await ApiClientService.Client.GetFromJsonAsync<List<UserDto>>("users")
+                            ?? new List<UserDto>();
 
                 dgvUsers.DataSource = null;
                 dgvUsers.DataSource = users;
 
                 if (dgvUsers.Columns["Id"] != null)
-                    dgvUsers.Columns["Id"].Visible = false;
+                {
+                    dgvUsers.Columns["Id"].HeaderText = "Mã NV";
+                    dgvUsers.Columns["Id"].FillWeight = 14F;
+                }
+
+                if (dgvUsers.Columns["UserId"] != null)
+                    dgvUsers.Columns["UserId"].Visible = false;
 
                 if (dgvUsers.Columns["Username"] != null)
+                {
                     dgvUsers.Columns["Username"].HeaderText = "Tên đăng nhập";
+                    dgvUsers.Columns["Username"].FillWeight = 22F;
+                }
 
                 if (dgvUsers.Columns["FullName"] != null)
-                    dgvUsers.Columns["FullName"].HeaderText = "Họ tên";
+                {
+                    dgvUsers.Columns["FullName"].HeaderText = "Họ và tên";
+                    dgvUsers.Columns["FullName"].FillWeight = 28F;
+                }
 
                 if (dgvUsers.Columns["Email"] != null)
+                {
                     dgvUsers.Columns["Email"].HeaderText = "Email";
+                    dgvUsers.Columns["Email"].FillWeight = 26F;
+                }
 
                 if (dgvUsers.Columns["Role"] != null)
+                {
                     dgvUsers.Columns["Role"].HeaderText = "Vai trò";
+                    dgvUsers.Columns["Role"].FillWeight = 18F;
+                }
 
                 if (dgvUsers.Columns["IsActive"] != null)
-                    dgvUsers.Columns["IsActive"].HeaderText = "Trạng thái";
+                    dgvUsers.Columns["IsActive"].Visible = false;
+
+                if (dgvUsers.Columns["StatusText"] != null)
+                {
+                    dgvUsers.Columns["StatusText"].HeaderText = "Trạng thái";
+                    dgvUsers.Columns["StatusText"].FillWeight = 24F;
+                }
+
+                // Tô màu trực quan cho tài khoản bị khóa / đang hoạt động
+                foreach (DataGridViewRow row in dgvUsers.Rows)
+                {
+                    if (row.DataBoundItem is UserDto u)
+                    {
+                        if (!u.IsActive)
+                        {
+                            row.DefaultCellStyle.ForeColor = Color.FromArgb(185, 28, 28);
+                            row.DefaultCellStyle.BackColor = Color.FromArgb(254, 242, 242);
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -65,7 +107,7 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private async void btnAddUser_Click(object sender, EventArgs e)
+        private async void btnAddUser_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtUsername.Text) ||
                 string.IsNullOrWhiteSpace(txtPassword.Text))
@@ -85,7 +127,8 @@ namespace MiniSupermarket.WinForms
                 Password = txtPassword.Text.Trim(),
                 FullName = txtFullName.Text.Trim(),
                 Email = txtEmail.Text.Trim(),
-                Role = cboRole.SelectedItem?.ToString() ?? "Cashier"
+                Role = cboRole.SelectedItem?.ToString() ?? "Cashier",
+                IsActive = true
             };
 
             try
@@ -126,12 +169,62 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private async void btnResetPassword_Click(object sender, EventArgs e)
+        private async void btnUpdateUser_Click(object? sender, EventArgs e)
         {
-            if (dgvUsers.CurrentRow == null)
+            if (_selectedUserId <= 0)
             {
                 MessageBox.Show(
-                    "Vui lòng chọn tài khoản cần đặt lại mật khẩu!",
+                    "Vui lòng chọn một tài khoản trên bảng để cập nhật!",
+                    "Cảnh báo",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            var updateDto = new
+            {
+                FullName = txtFullName.Text.Trim(),
+                Email = txtEmail.Text.Trim(),
+                Password = string.IsNullOrWhiteSpace(txtPassword.Text) ? null : txtPassword.Text.Trim(),
+                Role = cboRole.SelectedItem?.ToString() ?? "Cashier",
+                IsActive = _selectedIsActive
+            };
+
+            try
+            {
+                var res = await ApiClientService.Client.PutAsJsonAsync(
+                    $"users/{_selectedUserId}",
+                    updateDto);
+
+                if (res.IsSuccessStatusCode)
+                {
+                    MessageBox.Show(
+                        "Cập nhật thông tin tài khoản thành công!",
+                        "Thông báo",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+
+                    await LoadUsersAsync();
+                }
+                else
+                {
+                    var msg = await res.Content.ReadAsStringAsync();
+                    MessageBox.Show("Cập nhật thất bại:\n" + msg, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void btnResetPassword_Click(object? sender, EventArgs e)
+        {
+            int userId = GetSelectedUserId();
+            if (userId <= 0)
+            {
+                MessageBox.Show(
+                    "Vui lòng chọn tài khoản trên bảng cần đặt lại mật khẩu!",
                     "Cảnh báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -139,19 +232,16 @@ namespace MiniSupermarket.WinForms
                 return;
             }
 
-            var userId = Convert.ToInt32(
-                dgvUsers.CurrentRow.Cells["Id"].Value);
-
             string newPassword = txtPassword.Text.Trim();
 
             if (string.IsNullOrWhiteSpace(newPassword))
             {
                 MessageBox.Show(
-                    "Vui lòng nhập mật khẩu mới!",
+                    "Vui lòng nhập mật khẩu mới vào ô Mật khẩu!",
                     "Cảnh báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-
+                txtPassword.Focus();
                 return;
             }
 
@@ -178,8 +268,9 @@ namespace MiniSupermarket.WinForms
                 }
                 else
                 {
+                    string err = await res.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        "Không thể đặt lại mật khẩu!",
+                        "Không thể đặt lại mật khẩu!\n" + err,
                         "Thất bại",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
@@ -195,12 +286,13 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private async void btnToggleLock_Click(object sender, EventArgs e)
+        private async void btnToggleLock_Click(object? sender, EventArgs e)
         {
-            if (dgvUsers.CurrentRow == null)
+            int userId = GetSelectedUserId();
+            if (userId <= 0)
             {
                 MessageBox.Show(
-                    "Vui lòng chọn tài khoản!",
+                    "Vui lòng chọn một tài khoản trên danh sách để Khóa / Mở khóa!",
                     "Cảnh báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
@@ -208,11 +300,23 @@ namespace MiniSupermarket.WinForms
                 return;
             }
 
-            var userId = Convert.ToInt32(
-                dgvUsers.CurrentRow.Cells["Id"].Value);
+            bool isActive = _selectedIsActive;
+            if (dgvUsers.CurrentRow?.DataBoundItem is UserDto boundUser)
+            {
+                isActive = boundUser.IsActive;
+            }
 
-            bool isActive = Convert.ToBoolean(
-                dgvUsers.CurrentRow.Cells["IsActive"].Value);
+            string username = txtUsername.Text;
+            string actionName = isActive ? "KHÓA" : "MỞ KHÓA";
+
+            if (MessageBox.Show(
+                    $"Bạn có chắc chắn muốn {actionName} tài khoản '{username}' (ID: {userId})?",
+                    "Xác nhận trạng thái tài khoản",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Question) != DialogResult.Yes)
+            {
+                return;
+            }
 
             try
             {
@@ -227,10 +331,13 @@ namespace MiniSupermarket.WinForms
 
                 if (res.IsSuccessStatusCode)
                 {
+                    _selectedIsActive = !isActive;
+                    UpdateLockButtonAppearance(_selectedIsActive);
+
                     MessageBox.Show(
                         !isActive
-                            ? "Đã mở khóa tài khoản!"
-                            : "Đã khóa tài khoản!",
+                            ? $"Đã MỞ KHÓA tài khoản '{username}' thành công!"
+                            : $"Đã KHÓA tài khoản '{username}' thành công!",
                         "Thông báo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -239,8 +346,9 @@ namespace MiniSupermarket.WinForms
                 }
                 else
                 {
+                    string err = await res.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        "Không thể thay đổi trạng thái tài khoản!",
+                        "Không thể thay đổi trạng thái tài khoản!\n" + err,
                         "Thất bại",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
@@ -256,47 +364,91 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private void dgvUsers_CellClick(object sender, DataGridViewCellEventArgs e)
+        private int GetSelectedUserId()
+        {
+            if (_selectedUserId > 0) return _selectedUserId;
+
+            if (dgvUsers.CurrentRow?.DataBoundItem is UserDto u)
+            {
+                return u.EffectiveId;
+            }
+
+            if (dgvUsers.CurrentRow?.Cells["Id"]?.Value != null)
+            {
+                return Convert.ToInt32(dgvUsers.CurrentRow.Cells["Id"].Value);
+            }
+
+            return 0;
+        }
+
+        private void UpdateLockButtonAppearance(bool isActive)
+        {
+            if (isActive)
+            {
+                btnToggleLock.Text = "🔒 Khóa tài khoản đang chọn";
+                btnToggleLock.BackColor = Color.FromArgb(220, 38, 38);
+            }
+            else
+            {
+                btnToggleLock.Text = "🔓 Mở khóa tài khoản đang chọn";
+                btnToggleLock.BackColor = Color.FromArgb(22, 163, 74);
+            }
+        }
+
+        private void dgvUsers_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0)
                 return;
 
             var row = dgvUsers.Rows[e.RowIndex];
 
-            txtUsername.Text = row.Cells["Username"].Value?.ToString() ?? "";
-            txtFullName.Text = row.Cells["FullName"].Value?.ToString() ?? "";
-            txtEmail.Text = row.Cells["Email"].Value?.ToString() ?? "";
-            txtPassword.Clear();
+            if (row.DataBoundItem is UserDto u)
+            {
+                _selectedUserId = u.EffectiveId;
+                _selectedIsActive = u.IsActive;
+                txtUsername.Text = u.Username;
+                txtFullName.Text = u.FullName;
+                txtEmail.Text = u.Email;
+                txtPassword.Clear();
 
-            string role = row.Cells["Role"].Value?.ToString() ?? "Cashier";
+                if (cboRole.Items.Contains(u.Role))
+                    cboRole.SelectedItem = u.Role;
 
-            if (cboRole.Items.Contains(role))
-                cboRole.SelectedItem = role;
+                UpdateLockButtonAppearance(u.IsActive);
+            }
+        }
+
+        private async void btnReload_Click(object? sender, EventArgs e)
+        {
+            ClearInput();
+            await LoadUsersAsync();
         }
 
         private void ClearInput()
         {
+            _selectedUserId = 0;
+            _selectedIsActive = true;
             txtUsername.Clear();
             txtFullName.Clear();
             txtEmail.Clear();
             txtPassword.Clear();
             cboRole.SelectedIndex = 1;
+            btnToggleLock.Text = "🔒 Khóa / Mở khóa tài khoản";
+            btnToggleLock.BackColor = Color.FromArgb(217, 119, 6);
         }
     }
 
     public class UserDto
     {
         public int Id { get; set; }
+        public int UserId { get; set; }
+        public int EffectiveId => Id > 0 ? Id : UserId;
 
         public string Username { get; set; } = string.Empty;
-
         public string FullName { get; set; } = string.Empty;
-
         public string Email { get; set; } = string.Empty;
-
         public string Role { get; set; } = string.Empty;
-
         public bool IsActive { get; set; }
+        public string StatusText => IsActive ? "🟢 Đang hoạt động" : "🔴 Đã khóa";
     }
-
 }

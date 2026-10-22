@@ -76,7 +76,7 @@ namespace MiniSupermarket.WinForms
             });
         }
 
-        private async void txtBarcode_KeyDown(object sender, KeyEventArgs e)
+        private async void txtBarcode_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode != Keys.Enter)
                 return;
@@ -96,8 +96,9 @@ namespace MiniSupermarket.WinForms
         {
             try
             {
+                // Buổi 5 - Tiết 2: Sử dụng API ADO.NET tra cứu mã vạch siêu tốc qua SqlDataReader
                 var product = await SessionManager.ApiClientService.Client.GetFromJsonAsync<ProductDto>(
-                    $"products/barcode/{barcode}");
+                    $"ado-products/barcode/{barcode}");
 
                 if (product == null)
                 {
@@ -159,10 +160,11 @@ namespace MiniSupermarket.WinForms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Lỗi kết nối máy chủ: " + ex.Message,
-                    "Lỗi",
+                    "Không tìm thấy sản phẩm hoặc lỗi kết nối máy chủ: " + ex.Message,
+                    "Cảnh báo",
                     MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                    MessageBoxIcon.Warning);
+                txtBarcode.Focus();
             }
         }
 
@@ -178,7 +180,7 @@ namespace MiniSupermarket.WinForms
             CalculateChange();
         }
 
-        private void txtCashReceived_TextChanged(object sender, EventArgs e)
+        private void txtCashReceived_TextChanged(object? sender, EventArgs e)
         {
             CalculateChange();
         }
@@ -211,7 +213,7 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private async void btnCheckout_Click(object sender, EventArgs e)
+        private async void btnCheckout_Click(object? sender, EventArgs e)
         {
             if (_cart.Count == 0)
             {
@@ -253,17 +255,15 @@ namespace MiniSupermarket.WinForms
                 return;
             }
 
-            // [ĐÃ SỬA] Cấu trúc dữ liệu gửi lên phải khớp 100% với Model Order ở API
-            var orderRequest = new
+            // Buổi 5 - Tiết 5: Đóng gói CheckoutRequestDto gửi lên POST /api/checkout (bảo vệ bởi SqlTransaction ACID)
+            string cashierUsername = !string.IsNullOrWhiteSpace(SessionManager.CurrentUsername)
+                ? SessionManager.CurrentUsername
+                : "cashier01";
+
+            var checkoutRequest = new
             {
-                OrderCode = "TEMP", // Để tránh lỗi [Required] từ API
-                CustomerId = _currentCustomerId,
-                CashierId = 1, // LƯU Ý: Đang fix cứng là 1 để test. Khi test thành công, hãy đổi thành ID nhân viên thực tế.
-                Subtotal = total,
-                Total = total,
-                Discount = 0,
-                PaymentMethod = "CASH",
-                Status = "PAID",
+                CashierUsername = cashierUsername,
+                CustomerId = _currentCustomerId ?? 15, // Nếu là khách vãng lai, truyền CustomerId = 15 theo chuẩn Buổi 5
                 Items = _cart.Select(i => new
                 {
                     ProductId = i.ProductId,
@@ -274,15 +274,14 @@ namespace MiniSupermarket.WinForms
 
             try
             {
-                // [ĐÃ SỬA] Đổi URL từ "orders/checkout" thành "orders"
                 var response = await SessionManager.ApiClientService.Client.PostAsJsonAsync(
-                    "orders",
-                    orderRequest);
+                    "checkout",
+                    checkoutRequest);
 
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show(
-                        "Thanh toán thành công và đã in hóa đơn!",
+                        "Thanh toán hóa đơn POS thành công (đã trừ tồn kho & tích điểm thưởng)!",
                         "Thành công",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -298,10 +297,9 @@ namespace MiniSupermarket.WinForms
                 }
                 else
                 {
-                    // [ĐÃ SỬA] In ra chi tiết lỗi từ API để dễ dàng biết sai ở đâu
                     string error = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        $"Thanh toán thất bại từ máy chủ!\nMã lỗi: {(int)response.StatusCode}\nChi tiết: {error}",
+                        $"Thanh toán thất bại từ máy chủ (Đã Rollback an toàn)!\nMã lỗi: {(int)response.StatusCode}\nChi tiết: {error}",
                         "Lỗi API",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -317,7 +315,7 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private void btnClearCart_Click(object sender, EventArgs e)
+        private void btnClearCart_Click(object? sender, EventArgs e)
         {
             if (_cart.Count == 0)
                 return;
@@ -341,7 +339,7 @@ namespace MiniSupermarket.WinForms
             txtBarcode.Focus();
         }
 
-        private void FormPOS_KeyDown(object sender, KeyEventArgs e)
+        private void FormPOS_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F9)
             {
@@ -350,7 +348,7 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        private async void txtCustomerPhone_KeyDown(object sender, KeyEventArgs e)
+        private async void txtCustomerPhone_KeyDown(object? sender, KeyEventArgs e)
         {
             if (e.KeyCode != Keys.Enter)
                 return;
@@ -373,10 +371,7 @@ namespace MiniSupermarket.WinForms
                 if (customer != null)
                 {
                     lblCustomerName.Text = $"{customer.CustomerName} - Hạng: {customer.Tier}";
-
-                    // [ĐÃ SỬA] Bắt buộc phải lưu lại ID thì đơn hàng mới có mã khách
                     _currentCustomerId = customer.CustomerId;
-
                     txtBarcode.Focus();
                 }
             }
