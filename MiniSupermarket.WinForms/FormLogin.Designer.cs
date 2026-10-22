@@ -53,11 +53,11 @@ namespace MiniSupermarket.WinForms
             lblBrandIcon.TextAlign = ContentAlignment.MiddleCenter;
 
             lblBrandTitle.AutoSize = false;
-            lblBrandTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
+            lblBrandTitle.Font = new Font("Segoe UI", 13.5F, FontStyle.Bold);
             lblBrandTitle.ForeColor = Color.White;
-            lblBrandTitle.Location = new Point(0, 165);
-            lblBrandTitle.Size = new Size(260, 40);
-            lblBrandTitle.Text = "MINIMART POS";
+            lblBrandTitle.Location = new Point(5, 165);
+            lblBrandTitle.Size = new Size(250, 40);
+            lblBrandTitle.Text = "MINIMART SUPERMARKET";
             lblBrandTitle.TextAlign = ContentAlignment.MiddleCenter;
 
             lblBrandSub.AutoSize = false;
@@ -152,7 +152,7 @@ namespace MiniSupermarket.WinForms
             MaximizeBox = false;
             Name = "FormLogin";
             StartPosition = FormStartPosition.CenterScreen;
-            Text = "MiniMart POS - Đăng nhập hệ thống";
+            Text = "MiniMart Supermarket - Đăng nhập hệ thống";
             panelBanner.ResumeLayout(false);
             grpLogin.ResumeLayout(false);
             grpLogin.PerformLayout();
