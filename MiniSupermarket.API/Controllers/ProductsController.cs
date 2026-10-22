@@ -37,6 +37,73 @@ namespace MiniSupermarket.API.Controllers
             return Ok(products);
         }
 
+        // BƯỚC 1.2 & BÀI TẬP 6.2 (BUỔI 6): API Tìm kiếm kết hợp Phân trang và Lọc danh mục (LINQ Nâng cao)
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPagedProducts(
+            [FromQuery] string? keyword,
+            [FromQuery] int? categoryId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 5)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 5;
+
+            // 1. Khởi tạo câu truy vấn IQueryable (Chưa thực thi xuống SQL ngay)
+            // Sử dụng Include để JOIN lấy tên Category, AsNoTracking để tối ưu tốc độ đọc
+            var query = _context.Products
+                .Include(p => p.Category)
+                .AsNoTracking()
+                .AsQueryable();
+
+            // 2. Nếu người dùng có nhập từ khóa tìm kiếm -> Nối thêm mệnh đề WHERE
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                string kw = keyword.Trim().ToLower();
+                query = query.Where(p => p.ProductName.ToLower().Contains(kw) || p.Barcode.Contains(kw));
+            }
+
+            // Bài tập 6.2: Nếu có chọn danh mục cần lọc (categoryId > 0) -> Nối thêm mệnh đề WHERE
+            if (categoryId.HasValue && categoryId.Value > 0)
+            {
+                query = query.Where(p => p.CategoryId == categoryId.Value);
+            }
+
+            // 3. Đếm tổng số bản ghi thỏa mãn điều kiện (Để tính tổng số trang)
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            // 4. Thực hiện Phân trang (Skip & Take) và Làm phẳng dữ liệu (Select sang DTO)
+            // Lưu ý: Bắt buộc phải có OrderBy trước khi dùng Skip/Take trong EF Core
+            var items = await query
+                .OrderBy(p => p.ProductId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new ProductItemDto
+                {
+                    ProductId = p.ProductId,
+                    Barcode = p.Barcode,
+                    ProductName = p.ProductName,
+                    Price = p.Price,
+                    StockQuantity = p.StockQuantity,
+                    CategoryId = p.CategoryId,
+                    // Nếu sản phẩm chưa gắn danh mục, hiển thị "Chưa phân loại"
+                    CategoryName = p.Category != null ? p.Category.CategoryName : "Chưa phân loại"
+                })
+                .ToListAsync(); // Lúc này câu lệnh SQL mới thực sự được gửi xuống Database!
+
+            // 5. Đóng gói kết quả trả về
+            var response = new PagedResult<ProductItemDto>
+            {
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = items
+            };
+
+            return Ok(response);
+        }
+
         // 2. READ: Lấy chi tiết một sản phẩm theo ID
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)

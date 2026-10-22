@@ -29,6 +29,11 @@ namespace MiniSupermarket.WinForms
         private Button btnDelete;
         private Button btnSearch;
 
+        private Panel panelPaging;
+        private Button btnPrev;
+        private Label lblPaging;
+        private Button btnNext;
+
         private Panel panelTopBar;
         private GroupBox grpCustomerInfo;
         private GroupBox grpCustomerList;
@@ -69,12 +74,18 @@ namespace MiniSupermarket.WinForms
             this.btnDelete = new Button();
             this.btnSearch = new Button();
 
+            this.panelPaging = new Panel();
+            this.btnPrev = new Button();
+            this.lblPaging = new Label();
+            this.btnNext = new Button();
+
             this.panelTopBar = new Panel();
             this.grpCustomerInfo = new GroupBox();
             this.grpCustomerList = new GroupBox();
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvCustomers)).BeginInit();
             this.panelTopBar.SuspendLayout();
+            this.panelPaging.SuspendLayout();
             this.grpCustomerInfo.SuspendLayout();
             this.grpCustomerList.SuspendLayout();
             this.SuspendLayout();
@@ -261,10 +272,59 @@ namespace MiniSupermarket.WinForms
             this.btnLoad.Cursor = Cursors.Hand;
 
             // 
+            // panelPaging (Thanh điều hướng Phân trang Khách hàng - Bài tập 6.1)
+            // 
+            this.panelPaging.BackColor = Color.White;
+            this.panelPaging.Controls.Add(this.btnNext);
+            this.panelPaging.Controls.Add(this.lblPaging);
+            this.panelPaging.Controls.Add(this.btnPrev);
+            this.panelPaging.Dock = DockStyle.Bottom;
+            this.panelPaging.Location = new Point(10, 578);
+            this.panelPaging.Name = "panelPaging";
+            this.panelPaging.Size = new Size(678, 48);
+
+            // btnPrev
+            this.btnPrev.BackColor = Color.FromArgb(51, 65, 85);
+            this.btnPrev.FlatAppearance.BorderSize = 0;
+            this.btnPrev.FlatStyle = FlatStyle.Flat;
+            this.btnPrev.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            this.btnPrev.ForeColor = Color.White;
+            this.btnPrev.Location = new Point(6, 8);
+            this.btnPrev.Name = "btnPrev";
+            this.btnPrev.Size = new Size(135, 32);
+            this.btnPrev.Text = "<< Trang trước";
+            this.btnPrev.UseVisualStyleBackColor = false;
+            this.btnPrev.Cursor = Cursors.Hand;
+
+            // lblPaging
+            this.lblPaging.AutoSize = false;
+            this.lblPaging.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
+            this.lblPaging.ForeColor = Color.FromArgb(30, 64, 175);
+            this.lblPaging.Location = new Point(150, 8);
+            this.lblPaging.Name = "lblPaging";
+            this.lblPaging.Size = new Size(270, 32);
+            this.lblPaging.Text = "Trang 1 / 1 (Tổng: 0 KH)";
+            this.lblPaging.TextAlign = ContentAlignment.MiddleCenter;
+
+            // btnNext
+            this.btnNext.BackColor = Color.FromArgb(37, 99, 235);
+            this.btnNext.FlatAppearance.BorderSize = 0;
+            this.btnNext.FlatStyle = FlatStyle.Flat;
+            this.btnNext.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
+            this.btnNext.ForeColor = Color.White;
+            this.btnNext.Location = new Point(428, 8);
+            this.btnNext.Name = "btnNext";
+            this.btnNext.Size = new Size(135, 32);
+            this.btnNext.Text = "Trang sau >>";
+            this.btnNext.UseVisualStyleBackColor = false;
+            this.btnNext.Cursor = Cursors.Hand;
+
+            // 
             // grpCustomerList (Center/Left Full-Height Table - Dock Fill)
             // 
             this.grpCustomerList.BackColor = Color.White;
             this.grpCustomerList.Controls.Add(this.dgvCustomers);
+            this.grpCustomerList.Controls.Add(this.panelPaging);
             this.grpCustomerList.Dock = DockStyle.Fill;
             this.grpCustomerList.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             this.grpCustomerList.ForeColor = Color.FromArgb(30, 41, 59);
@@ -274,7 +334,7 @@ namespace MiniSupermarket.WinForms
             this.grpCustomerList.Size = new Size(698, 636);
             this.grpCustomerList.TabIndex = 0;
             this.grpCustomerList.TabStop = false;
-            this.grpCustomerList.Text = "DANH SÁCH KHÁCH HÀNG THÂN THIẾT";
+            this.grpCustomerList.Text = "DANH SÁCH KHÁCH HÀNG THÂN THIẾT (SẮP XẾP THEO ĐIỂM TÍCH LŨY)";
 
             // 
             // dgvCustomers
@@ -319,7 +379,7 @@ namespace MiniSupermarket.WinForms
             this.dgvCustomers.RowHeadersVisible = false;
             this.dgvCustomers.RowTemplate.Height = 36;
             this.dgvCustomers.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            this.dgvCustomers.Size = new Size(678, 600);
+            this.dgvCustomers.Size = new Size(678, 552);
             this.dgvCustomers.TabIndex = 0;
 
             // 
@@ -342,6 +402,7 @@ namespace MiniSupermarket.WinForms
 
             ((System.ComponentModel.ISupportInitialize)(this.dgvCustomers)).EndInit();
             this.panelTopBar.ResumeLayout(false);
+            this.panelPaging.ResumeLayout(false);
             this.grpCustomerInfo.ResumeLayout(false);
             this.grpCustomerInfo.PerformLayout();
             this.grpCustomerList.ResumeLayout(false);

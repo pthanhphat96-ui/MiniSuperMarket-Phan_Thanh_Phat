@@ -82,6 +82,9 @@ namespace MiniSupermarket.WinForms
 
                 SessionManager.CurrentUsername = username;
 
+                // Đính kèm JWT Token vào ApiClientService (Buổi 6 - Bước 3.1)
+                MiniSupermarket.WinForms.Services.ApiClientService.AttachToken(SessionManager.JwtToken);
+
                 FormMainShell frmMain = new FormMainShell();
 
                 this.Hide();

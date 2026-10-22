@@ -34,6 +34,54 @@ namespace MiniSupermarket.API.Controllers
         }
 
         // =========================================================
+        // BÀI TẬP 6.1 (BUỔI 6): API Phân trang danh sách Khách hàng
+        // GET /api/customers/paged?keyword=...&pageNumber=1&pageSize=5
+        // Sắp xếp giảm dần theo điểm tích lũy (RewardPoints)
+        // =========================================================
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPagedCustomers(
+            [FromQuery] string? keyword,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 5)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 5;
+
+            var query = _context.Customers
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                string kw = keyword.Trim();
+                query = query.Where(c =>
+                    c.CustomerName.Contains(kw) ||
+                    c.PhoneNumber.Contains(kw));
+            }
+
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var items = await query
+                .OrderByDescending(c => c.RewardPoints)
+                .ThenBy(c => c.CustomerId)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var response = new PagedResult<Customer>
+            {
+                CurrentPage = pageNumber,
+                PageSize = pageSize,
+                TotalItems = totalItems,
+                TotalPages = totalPages,
+                Items = items
+            };
+
+            return Ok(response);
+        }
+
+        // =========================================================
         // 2. GET: Lấy chi tiết khách hàng theo ID
         // GET /api/customers/{id}
         // =========================================================
@@ -127,7 +175,7 @@ namespace MiniSupermarket.API.Controllers
 
             _context.Customers.Add(newCustomer);
 
-            // Lưu vào SQL Server
+            // Lưu vào CSDL
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(

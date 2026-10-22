@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -10,19 +10,15 @@ namespace MiniSupermarket.WinForms
 {
     public partial class FormCustomerManagement : Form
     {
-        // =========================================================
-        // HTTP CLIENT
-        // =========================================================
-
         private readonly HttpClient _httpClient;
 
-        // Sửa port theo MiniSupermarket.API của bạn
         private const string ApiUrl =
             "https://localhost:7158/api/customers";
 
-        // =========================================================
-        // CONSTRUCTOR
-        // =========================================================
+        // Biến lưu trạng thái Phân trang Khách hàng (Bài tập 6.1 - Buổi 6)
+        private int _currentPage = 1;
+        private int _pageSize = 5;
+        private int _totalPages = 1;
 
         public FormCustomerManagement()
         {
@@ -30,9 +26,6 @@ namespace MiniSupermarket.WinForms
 
             _httpClient = new HttpClient();
 
-            // =========================================================
-            // GẮN TOKEN VÀO HTTPCLIENT TỰ ĐỘNG TỪ SESSION
-            // =========================================================
             if (!string.IsNullOrEmpty(SessionManager.JwtToken))
             {
                 _httpClient.DefaultRequestHeaders.Authorization =
@@ -47,77 +40,69 @@ namespace MiniSupermarket.WinForms
             btnUpdate.Click += btnUpdate_Click;
             btnDelete.Click += btnDelete_Click;
             btnSearch.Click += btnSearch_Click;
+            btnPrev.Click += btnPrev_Click;
+            btnNext.Click += btnNext_Click;
 
             dgvCustomers.CellClick += dgvCustomers_CellClick;
         }
 
-        // =========================================================
-        // MODEL CUSTOMER
-        // =========================================================
-
         public class Customer
         {
             public int CustomerId { get; set; }
-
             public string CustomerName { get; set; } = string.Empty;
-
             public string PhoneNumber { get; set; } = string.Empty;
-
             public string? Address { get; set; }
-
             public int RewardPoints { get; set; }
-
             public string MembershipRank { get; set; } = "Chuẩn";
         }
-
-        // =========================================================
-        // FORM LOAD
-        // =========================================================
 
         private async void FormCustomerManagement_Load(
             object? sender,
             EventArgs e)
         {
             txtCustomerId.ReadOnly = true;
-
             txtRewardPoints.Text = "0";
             txtMembershipRank.Text = "Chuẩn";
 
-            await LoadCustomers();
+            await LoadCustomersPagedAsync();
         }
 
         // =========================================================
-        // 1. GET ALL CUSTOMERS
-        // GET /api/customers
+        // 1. GET PAGED CUSTOMERS (Bài tập 6.1 - Buổi 6)
+        // GET /api/customers/paged?keyword=...&pageNumber=1&pageSize=5
         // =========================================================
-
-        private async Task LoadCustomers()
+        private async Task LoadCustomersPagedAsync(string? keyword = null)
         {
             try
             {
-                var customers =
-                    await _httpClient.GetFromJsonAsync<List<Customer>>(
-                        ApiUrl);
-
-                if (customers == null)
+                if (!string.IsNullOrEmpty(SessionManager.JwtToken))
                 {
-                    dgvCustomers.DataSource = null;
-                    return;
+                    _httpClient.DefaultRequestHeaders.Authorization =
+                        new AuthenticationHeaderValue("Bearer", SessionManager.JwtToken);
                 }
 
-                dgvCustomers.DataSource = customers;
+                string kw = keyword ?? string.Empty;
+                string url = $"{ApiUrl}/paged?keyword={Uri.EscapeDataString(kw)}&pageNumber={_currentPage}&pageSize={_pageSize}";
 
-                ConfigureDataGridView();
+                var result = await _httpClient.GetFromJsonAsync<PagedViewResult<Customer>>(url);
+
+                if (result != null)
+                {
+                    dgvCustomers.DataSource = null;
+                    dgvCustomers.DataSource = result.Items;
+                    ConfigureDataGridView();
+
+                    _totalPages = result.TotalPages == 0 ? 1 : result.TotalPages;
+                    lblPaging.Text = $"Trang {result.CurrentPage} / {_totalPages} (Tổng: {result.TotalItems} KH)";
+
+                    btnPrev.Enabled = _currentPage > 1;
+                    btnNext.Enabled = _currentPage < _totalPages;
+                }
             }
             catch (HttpRequestException ex)
             {
                 MessageBox.Show(
-                    "Không thể kết nối đến API!\n\n" +
-                    "Kiểm tra các thông tin sau:\n" +
-                    "- MiniSupermarket.API đã chạy chưa?\n" +
-                    "- Port API có đúng không?\n" +
-                    "- URL API có chính xác không?\n\n" +
-                    ex.Message,
+                    "Không thể kết nối đến API!\n\n" + ex.Message,
                     "Lỗi kết nối",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -132,9 +117,23 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // =========================================================
-        // CẤU HÌNH DATAGRIDVIEW
-        // =========================================================
+        private async void btnPrev_Click(object? sender, EventArgs e)
+        {
+            if (_currentPage > 1)
+            {
+                _currentPage--;
+                await LoadCustomersPagedAsync(txtCustomerName.Text.Trim());
+            }
+        }
+
+        private async void btnNext_Click(object? sender, EventArgs e)
+        {
+            if (_currentPage < _totalPages)
+            {
+                _currentPage++;
+                await LoadCustomersPagedAsync(txtCustomerName.Text.Trim());
+            }
+        }
 
         private void ConfigureDataGridView()
         {
@@ -145,53 +144,35 @@ namespace MiniSupermarket.WinForms
                 dgvCustomers.Columns["CustomerId"].HeaderText = "Mã KH";
 
             if (dgvCustomers.Columns["CustomerName"] != null)
-                dgvCustomers.Columns["CustomerName"].HeaderText =
-                    "Tên khách hàng";
+                dgvCustomers.Columns["CustomerName"].HeaderText = "Tên khách hàng";
 
             if (dgvCustomers.Columns["PhoneNumber"] != null)
-                dgvCustomers.Columns["PhoneNumber"].HeaderText =
-                    "Số điện thoại";
+                dgvCustomers.Columns["PhoneNumber"].HeaderText = "Số điện thoại";
 
             if (dgvCustomers.Columns["Address"] != null)
-                dgvCustomers.Columns["Address"].HeaderText =
-                    "Địa chỉ";
+                dgvCustomers.Columns["Address"].HeaderText = "Địa chỉ";
 
             if (dgvCustomers.Columns["RewardPoints"] != null)
-                dgvCustomers.Columns["RewardPoints"].HeaderText =
-                    "Điểm tích lũy";
+                dgvCustomers.Columns["RewardPoints"].HeaderText = "Điểm tích lũy";
 
             if (dgvCustomers.Columns["MembershipRank"] != null)
-                dgvCustomers.Columns["MembershipRank"].HeaderText =
-                    "Hạng thành viên";
+                dgvCustomers.Columns["MembershipRank"].HeaderText = "Hạng thành viên";
 
-            dgvCustomers.AutoSizeColumnsMode =
-                DataGridViewAutoSizeColumnsMode.Fill;
-
-            dgvCustomers.SelectionMode =
-                DataGridViewSelectionMode.FullRowSelect;
-
+            dgvCustomers.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvCustomers.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvCustomers.MultiSelect = false;
-
             dgvCustomers.ReadOnly = true;
-
             dgvCustomers.AllowUserToAddRows = false;
         }
-
-        // =========================================================
-        // BUTTON LOAD
-        // =========================================================
 
         private async void btnLoad_Click(
             object? sender,
             EventArgs e)
         {
-            await LoadCustomers();
+            ClearInput();
+            _currentPage = 1;
+            await LoadCustomersPagedAsync();
         }
-
-        // =========================================================
-        // 2. ADD CUSTOMER
-        // POST /api/customers
-        // =========================================================
 
         private async void btnAdd_Click(
             object? sender,
@@ -204,26 +185,14 @@ namespace MiniSupermarket.WinForms
 
                 var customer = new Customer
                 {
-                    CustomerName =
-                        txtCustomerName.Text.Trim(),
-
-                    PhoneNumber =
-                        txtPhoneNumber.Text.Trim(),
-
-                    Address =
-                        string.IsNullOrWhiteSpace(txtAddress.Text)
-                        ? null
-                        : txtAddress.Text.Trim(),
-
+                    CustomerName = txtCustomerName.Text.Trim(),
+                    PhoneNumber = txtPhoneNumber.Text.Trim(),
+                    Address = string.IsNullOrWhiteSpace(txtAddress.Text) ? null : txtAddress.Text.Trim(),
                     RewardPoints = 0,
-
                     MembershipRank = "Chuẩn"
                 };
 
-                var response =
-                    await _httpClient.PostAsJsonAsync(
-                        ApiUrl,
-                        customer);
+                var response = await _httpClient.PostAsJsonAsync(ApiUrl, customer);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -233,18 +202,14 @@ namespace MiniSupermarket.WinForms
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
 
-                    await LoadCustomers();
-
                     ClearInput();
+                    await LoadCustomersPagedAsync();
                 }
                 else
                 {
-                    string error =
-                        await response.Content.ReadAsStringAsync();
-
+                    string error = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        "Thêm khách hàng thất bại!\n\n" +
-                        error,
+                        "Thêm khách hàng thất bại!\n\n" + error,
                         "Lỗi",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -253,18 +218,12 @@ namespace MiniSupermarket.WinForms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Có lỗi khi thêm khách hàng!\n\n" +
-                    ex.Message,
+                    "Có lỗi khi thêm khách hàng!\n\n" + ex.Message,
                     "Lỗi",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
-
-        // =========================================================
-        // 3. UPDATE CUSTOMER
-        // PUT /api/customers/{id}
-        // =========================================================
 
         private async void btnUpdate_Click(
             object? sender,
@@ -272,65 +231,42 @@ namespace MiniSupermarket.WinForms
         {
             try
             {
-                if (!int.TryParse(
-                    txtCustomerId.Text,
-                    out int customerId))
+                if (!int.TryParse(txtCustomerId.Text, out int customerId))
                 {
                     MessageBox.Show(
                         "Vui lòng chọn khách hàng cần cập nhật!",
                         "Thông báo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
-
                     return;
                 }
 
                 if (!ValidateCustomerInput())
                     return;
 
-                if (!int.TryParse(
-                    txtRewardPoints.Text,
-                    out int rewardPoints))
+                if (!int.TryParse(txtRewardPoints.Text, out int rewardPoints))
                 {
                     MessageBox.Show(
                         "Điểm tích lũy phải là số nguyên!",
                         "Thông báo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
-
                     txtRewardPoints.Focus();
-
                     return;
                 }
 
                 var customer = new Customer
                 {
                     CustomerId = customerId,
-
-                    CustomerName =
-                        txtCustomerName.Text.Trim(),
-
-                    PhoneNumber =
-                        txtPhoneNumber.Text.Trim(),
-
-                    Address =
-                        string.IsNullOrWhiteSpace(txtAddress.Text)
-                        ? null
-                        : txtAddress.Text.Trim(),
-
+                    CustomerName = txtCustomerName.Text.Trim(),
+                    PhoneNumber = txtPhoneNumber.Text.Trim(),
+                    Address = string.IsNullOrWhiteSpace(txtAddress.Text) ? null : txtAddress.Text.Trim(),
                     RewardPoints = rewardPoints,
-
-                    MembershipRank =
-                        txtMembershipRank.Text.Trim()
+                    MembershipRank = txtMembershipRank.Text.Trim()
                 };
 
-                string url =
-                    $"{ApiUrl}/{customerId}";
-
-                var response =
-                    await _httpClient.PutAsJsonAsync(
-                        url,
-                        customer);
+                string url = $"{ApiUrl}/{customerId}";
+                var response = await _httpClient.PutAsJsonAsync(url, customer);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -340,18 +276,14 @@ namespace MiniSupermarket.WinForms
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
 
-                    await LoadCustomers();
-
                     ClearInput();
+                    await LoadCustomersPagedAsync();
                 }
                 else
                 {
-                    string error =
-                        await response.Content.ReadAsStringAsync();
-
+                    string error = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        "Cập nhật khách hàng thất bại!\n\n" +
-                        error,
+                        "Cập nhật khách hàng thất bại!\n\n" + error,
                         "Lỗi",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -360,18 +292,12 @@ namespace MiniSupermarket.WinForms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Có lỗi khi cập nhật khách hàng!\n\n" +
-                    ex.Message,
+                    "Có lỗi khi cập nhật khách hàng!\n\n" + ex.Message,
                     "Lỗi",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
-
-        // =========================================================
-        // 4. DELETE CUSTOMER
-        // DELETE /api/customers/{id}
-        // =========================================================
 
         private async void btnDelete_Click(
             object? sender,
@@ -379,16 +305,13 @@ namespace MiniSupermarket.WinForms
         {
             try
             {
-                if (!int.TryParse(
-                    txtCustomerId.Text,
-                    out int customerId))
+                if (!int.TryParse(txtCustomerId.Text, out int customerId))
                 {
                     MessageBox.Show(
                         "Vui lòng chọn khách hàng cần xóa!",
                         "Thông báo",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
-
                     return;
                 }
 
@@ -401,11 +324,8 @@ namespace MiniSupermarket.WinForms
                 if (result != DialogResult.Yes)
                     return;
 
-                string url =
-                    $"{ApiUrl}/{customerId}";
-
-                var response =
-                    await _httpClient.DeleteAsync(url);
+                string url = $"{ApiUrl}/{customerId}";
+                var response = await _httpClient.DeleteAsync(url);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -415,18 +335,14 @@ namespace MiniSupermarket.WinForms
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
 
-                    await LoadCustomers();
-
                     ClearInput();
+                    await LoadCustomersPagedAsync();
                 }
                 else
                 {
-                    string error =
-                        await response.Content.ReadAsStringAsync();
-
+                    string error = await response.Content.ReadAsStringAsync();
                     MessageBox.Show(
-                        "Xóa khách hàng thất bại!\n\n" +
-                        error,
+                        "Xóa khách hàng thất bại!\n\n" + error,
                         "Lỗi",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Error);
@@ -435,60 +351,25 @@ namespace MiniSupermarket.WinForms
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Có lỗi khi xóa khách hàng!\n\n" +
-                    ex.Message,
+                    "Có lỗi khi xóa khách hàng!\n\n" + ex.Message,
                     "Lỗi",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
         }
-
-        // =========================================================
-        // 5. SEARCH CUSTOMER
-        // GET /api/customers/search?keyword=...
-        // =========================================================
 
         private async void btnSearch_Click(
             object? sender,
             EventArgs e)
         {
-            try
+            _currentPage = 1;
+            string keyword = txtCustomerName.Text.Trim();
+            if (string.IsNullOrWhiteSpace(keyword))
             {
-                string keyword =
-                    txtCustomerName.Text.Trim();
-
-                if (string.IsNullOrWhiteSpace(keyword))
-                {
-                    await LoadCustomers();
-                    return;
-                }
-
-                string url =
-                    $"{ApiUrl}/search?keyword=" +
-                    Uri.EscapeDataString(keyword);
-
-                var customers =
-                    await _httpClient
-                        .GetFromJsonAsync<List<Customer>>(url);
-
-                dgvCustomers.DataSource = customers;
-
-                ConfigureDataGridView();
+                keyword = txtPhoneNumber.Text.Trim();
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "Tìm kiếm khách hàng thất bại!\n\n" +
-                    ex.Message,
-                    "Lỗi",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
+            await LoadCustomersPagedAsync(keyword);
         }
-
-        // =========================================================
-        // 6. CLICK DATA GRIDVIEW
-        // =========================================================
 
         private void dgvCustomers_CellClick(
             object? sender,
@@ -497,65 +378,37 @@ namespace MiniSupermarket.WinForms
             if (e.RowIndex < 0)
                 return;
 
-            DataGridViewRow row =
-                dgvCustomers.Rows[e.RowIndex];
+            DataGridViewRow row = dgvCustomers.Rows[e.RowIndex];
 
-            txtCustomerId.Text =
-                row.Cells["CustomerId"]
-                    .Value?.ToString() ?? "";
-
-            txtCustomerName.Text =
-                row.Cells["CustomerName"]
-                    .Value?.ToString() ?? "";
-
-            txtPhoneNumber.Text =
-                row.Cells["PhoneNumber"]
-                    .Value?.ToString() ?? "";
-
-            txtAddress.Text =
-                row.Cells["Address"]
-                    .Value?.ToString() ?? "";
-
-            txtRewardPoints.Text =
-                row.Cells["RewardPoints"]
-                    .Value?.ToString() ?? "0";
-
-            txtMembershipRank.Text =
-                row.Cells["MembershipRank"]
-                    .Value?.ToString() ?? "Chuẩn";
+            txtCustomerId.Text = row.Cells["CustomerId"].Value?.ToString() ?? "";
+            txtCustomerName.Text = row.Cells["CustomerName"].Value?.ToString() ?? "";
+            txtPhoneNumber.Text = row.Cells["PhoneNumber"].Value?.ToString() ?? "";
+            txtAddress.Text = row.Cells["Address"].Value?.ToString() ?? "";
+            txtRewardPoints.Text = row.Cells["RewardPoints"].Value?.ToString() ?? "0";
+            txtMembershipRank.Text = row.Cells["MembershipRank"].Value?.ToString() ?? "Chuẩn";
         }
-
-        // =========================================================
-        // VALIDATE INPUT
-        // =========================================================
 
         private bool ValidateCustomerInput()
         {
-            if (string.IsNullOrWhiteSpace(
-                txtCustomerName.Text))
+            if (string.IsNullOrWhiteSpace(txtCustomerName.Text))
             {
                 MessageBox.Show(
                     "Vui lòng nhập tên khách hàng!",
                     "Thông báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-
                 txtCustomerName.Focus();
-
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(
-                txtPhoneNumber.Text))
+            if (string.IsNullOrWhiteSpace(txtPhoneNumber.Text))
             {
                 MessageBox.Show(
                     "Vui lòng nhập số điện thoại!",
                     "Thông báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-
                 txtPhoneNumber.Focus();
-
                 return false;
             }
 
@@ -566,58 +419,34 @@ namespace MiniSupermarket.WinForms
                     "Thông báo",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-
                 txtPhoneNumber.Focus();
-
                 return false;
             }
 
             return true;
         }
 
-        // =========================================================
-        // CLEAR INPUT
-        // =========================================================
-
         private void ClearInput()
         {
             txtCustomerId.Clear();
-
             txtCustomerName.Clear();
-
             txtPhoneNumber.Clear();
-
             txtAddress.Clear();
-
             txtRewardPoints.Text = "0";
-
             txtMembershipRank.Text = "Chuẩn";
-
             txtCustomerName.Focus();
         }
 
-        // =========================================================
-        // GẮN JWT TOKEN
-        // Gọi hàm này sau khi đăng nhập thành công
-        // =========================================================
-        // (Đã được chuyển lên Constructor, giữ lại phòng hờ nếu cần gán lại Token)
         public void SetJwtToken(string token)
         {
             _httpClient.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue(
-                    "Bearer",
-                    token);
+                new AuthenticationHeaderValue("Bearer", token);
         }
-
-        // =========================================================
-        // FORM CLOSED
-        // =========================================================
 
         protected override void OnFormClosed(
             FormClosedEventArgs e)
         {
             _httpClient.Dispose();
-
             base.OnFormClosed(e);
         }
     }
