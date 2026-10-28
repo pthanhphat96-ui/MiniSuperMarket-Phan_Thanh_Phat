@@ -9,9 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
 using MiniSupermarket.API.Models;
 using System.Data;
-// Ánh xạ tương thích chuẩn ADO.NET cho MySQL (XAMPP)
-// Nếu dùng SQL Server chỉ cần mở comment dòng dưới:
-// using Microsoft.Data.SqlClient;
 using SqlConnection = MySqlConnector.MySqlConnection;
 using SqlCommand = MySqlConnector.MySqlCommand;
 using SqlDataReader = MySqlConnector.MySqlDataReader;
@@ -21,12 +18,12 @@ namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin")] // Tiêu chí 29 & 30: Chỉ Admin được xem báo cáo doanh thu
     public class ReportsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
         private readonly SupermarketDbContext _db;
 
-        // Dependency Injection lay chuoi ket noi tu appsettings.json va DbContext
         public ReportsController(IConfiguration configuration, SupermarketDbContext db)
         {
             _configuration = configuration;
@@ -38,33 +35,25 @@ namespace MiniSupermarket.API.Controllers
         // Chuc nang: Goi Stored Procedure sp_GetRevenueByCashier qua SqlDataReader
         // =========================================================================
         [HttpGet("revenue-by-cashier")]
-        public IActionResult GetRevenueByCashier()
+        public async Task<IActionResult> GetRevenueByCashier()
         {
             var reportList = new List<CashierRevenueDto>();
             string connectionString = _configuration.GetConnectionString("DefaultConnection")!;
 
-            // 1. Khoi tao SqlConnection trong khoi using dam bao tu dong dong ket noi
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                // 2. Gan CommandText la CHINH XAC ten Stored Procedure tren CSDL
                 using (SqlCommand command = new SqlCommand("sp_GetRevenueByCashier", connection))
                 {
-                    // 3. DIEM KHOA HOC QUAN TRONG: Thiet lap CommandType la StoredProcedure
-                    // Neu thieu dong nay, CSDL se hieu nham day la chuoi SQL thuong va bao loi cu phap!
                     command.CommandType = CommandType.StoredProcedure;
 
                     try
                     {
-                        // 4. Mo ket noi vat ly toi CSDL
-                        connection.Open();
+                        await connection.OpenAsync();
 
-                        // 5. Thuc thi bang ExecuteReader(): Nhan ve luong du lieu forward-only
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
                         {
-                            // 6. Vong lap doc tung dong ket qua cua Stored Procedure
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
-                                // Anh xa tung cot du lieu tu reader vao doi tuong DTO
                                 var item = new CashierRevenueDto
                                 {
                                     CashierUsername = reader["CashierUsername"].ToString() ?? string.Empty,
@@ -79,11 +68,10 @@ namespace MiniSupermarket.API.Controllers
 
                                 reportList.Add(item);
                             }
-                        } // reader tu dong Close() tai day
+                        }
                     }
                     catch (SqlException ex)
                     {
-                        // Bat loi neu quen tao Stored Procedure tren CSDL hoac sai chuoi ket noi
                         return StatusCode(500, new
                         {
                             success = false,
@@ -91,9 +79,8 @@ namespace MiniSupermarket.API.Controllers
                         });
                     }
                 }
-            } // connection tu dong Close() va Dispose() tai day
+            }
 
-            // 7. Tra ve ma 200 OK kem danh sach bao cao da tong hop
             return Ok(new
             {
                 success = true,
@@ -109,7 +96,7 @@ namespace MiniSupermarket.API.Controllers
         // GET: api/reports/revenue-by-date-range?fromDate=2026-01-01&toDate=2026-12-31
         // =========================================================================
         [HttpGet("revenue-by-date-range")]
-        public IActionResult GetRevenueByDateRange(
+        public async Task<IActionResult> GetRevenueByDateRange(
             [FromQuery] DateTime? fromDate = null,
             [FromQuery] DateTime? toDate = null)
         {
@@ -124,16 +111,15 @@ namespace MiniSupermarket.API.Controllers
                 using (SqlCommand command = new SqlCommand("sp_GetRevenueByDateRange", connection))
                 {
                     command.CommandType = CommandType.StoredProcedure;
-                    // Trong MySQL tham số Stored Procedure không có tiền tố @ trong định nghĩa hoặc có p_FromDate/FromDate
                     command.Parameters.AddWithValue("FromDate", start);
                     command.Parameters.AddWithValue("ToDate", end);
 
                     try
                     {
-                        connection.Open();
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        await connection.OpenAsync();
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
                         {
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
                                 reportList.Add(new CashierRevenueDto
                                 {
@@ -176,7 +162,7 @@ namespace MiniSupermarket.API.Controllers
         // GET: api/reports/top5-selling-products
         // =========================================================================
         [HttpGet("top5-selling-products")]
-        public IActionResult GetTop5SellingProducts()
+        public async Task<IActionResult> GetTop5SellingProducts()
         {
             var topProducts = new List<TopSellingProductDto>();
             string connectionString = _configuration.GetConnectionString("DefaultConnection")!;
@@ -189,10 +175,10 @@ namespace MiniSupermarket.API.Controllers
 
                     try
                     {
-                        connection.Open();
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        await connection.OpenAsync();
+                        using (SqlDataReader reader = await command.ExecuteReaderAsync())
                         {
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
                                 topProducts.Add(new TopSellingProductDto
                                 {
@@ -253,6 +239,7 @@ namespace MiniSupermarket.API.Controllers
                 .Include(o => o.Items)
                     .ThenInclude(i => i.Product)
                 .Include(o => o.Customer)
+                .Include(o => o.Cashier)
                 .AsNoTracking()
                 .ToListAsync();
 
@@ -293,7 +280,10 @@ namespace MiniSupermarket.API.Controllers
                     o.Status,
                     CustomerName = o.Customer != null
                         ? o.Customer.CustomerName
-                        : "Khách vãng lai"
+                        : "Khách vãng lai",
+                    CashierName = o.Cashier != null
+                        ? o.Cashier.FullName
+                        : o.CashierUsername
                 })
                 .ToList();
 

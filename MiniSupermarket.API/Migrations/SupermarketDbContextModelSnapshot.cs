@@ -377,13 +377,24 @@ namespace MiniSupermarket.API.Migrations
                     b.Property<int>("CashierId")
                         .HasColumnType("int");
 
+                    b.Property<string>("CashierUsername")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("FinalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("OrderCode")
@@ -396,6 +407,9 @@ namespace MiniSupermarket.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)");
 
+                    b.Property<int>("RewardPoints")
+                        .HasColumnType("int");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -406,6 +420,9 @@ namespace MiniSupermarket.API.Migrations
 
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TotalItems")
+                        .HasColumnType("int");
 
                     b.HasKey("OrderId");
 
@@ -420,131 +437,181 @@ namespace MiniSupermarket.API.Migrations
                         {
                             OrderId = 6,
                             CashierId = 8,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 8, 15, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2732),
                             CustomerId = 1,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00006",
                             PaymentMethod = "CASH",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 700000m,
-                            Total = 700000m
+                            Total = 700000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 7,
                             CashierId = 9,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 9, 20, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2747),
                             CustomerId = 2,
                             Discount = 100000m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00007",
                             PaymentMethod = "CARD",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 2500000m,
-                            Total = 2400000m
+                            Total = 2400000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 8,
                             CashierId = 10,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 10, 10, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2750),
                             CustomerId = 3,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00008",
                             PaymentMethod = "MOMO",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 1800000m,
-                            Total = 1800000m
+                            Total = 1800000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 9,
                             CashierId = 11,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 11, 5, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2753),
                             CustomerId = 4,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00009",
                             PaymentMethod = "CASH",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 500000m,
-                            Total = 500000m
+                            Total = 500000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 10,
                             CashierId = 12,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 13, 15, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2755),
                             CustomerId = 5,
                             Discount = 100000m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00010",
                             PaymentMethod = "BANK_TRANSFER",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 2100000m,
-                            Total = 2000000m
+                            Total = 2000000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 11,
                             CashierId = 13,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 14, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2758),
                             CustomerId = 6,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00011",
                             PaymentMethod = "CASH",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 1200000m,
-                            Total = 1200000m
+                            Total = 1200000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 12,
                             CashierId = 14,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 15, 25, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2760),
                             CustomerId = 7,
                             Discount = 200000m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00012",
                             PaymentMethod = "CARD",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 3500000m,
-                            Total = 3300000m
+                            Total = 3300000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 13,
                             CashierId = 15,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 16, 10, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2809),
                             CustomerId = 8,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00013",
                             PaymentMethod = "MOMO",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 650000m,
-                            Total = 650000m
+                            Total = 650000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 14,
                             CashierId = 8,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 17, 30, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2812),
                             CustomerId = 9,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00014",
                             PaymentMethod = "CASH",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 1450000m,
-                            Total = 1450000m
+                            Total = 1450000m,
+                            TotalItems = 0
                         },
                         new
                         {
                             OrderId = 15,
                             CashierId = 9,
+                            CashierUsername = "",
                             CreatedAt = new DateTime(2026, 10, 15, 19, 0, 0, 0, DateTimeKind.Unspecified),
+                            CreatedDate = new DateTime(2026, 10, 28, 15, 23, 1, 265, DateTimeKind.Local).AddTicks(2814),
                             CustomerId = 10,
                             Discount = 0m,
+                            FinalAmount = 0m,
                             OrderCode = "HD00015",
                             PaymentMethod = "BANK_TRANSFER",
+                            RewardPoints = 0,
                             Status = "PAID",
                             Subtotal = 2200000m,
-                            Total = 2200000m
+                            Total = 2200000m,
+                            TotalItems = 0
                         });
                 });
 

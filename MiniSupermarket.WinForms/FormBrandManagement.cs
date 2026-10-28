@@ -1,22 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Xml.Linq;
+using MiniSupermarket.WinForms.Services;
 
 namespace MiniSupermarket.WinForms
 {
     public partial class FormBrandManagement : Form
     {
-        private readonly HttpClient _http;
-        private const string API_URL = "https://localhost:7158/api/brands"; // Nhớ kiểm tra lại Port của API
-
         public FormBrandManagement()
         {
             InitializeComponent();
-            _http = new HttpClient();
         }
 
         private async void FormBrandManagement_Load(object sender, EventArgs e)
@@ -29,10 +24,10 @@ namespace MiniSupermarket.WinForms
             try
             {
                 string url = string.IsNullOrWhiteSpace(keyword)
-                    ? API_URL
-                    : $"{API_URL}/search?keyword={keyword}";
+                    ? "brands"
+                    : $"brands/search?keyword={Uri.EscapeDataString(keyword)}";
 
-                var brands = await _http.GetFromJsonAsync<List<BrandDto>>(url);
+                var brands = await ApiClientService.Client.GetFromJsonAsync<List<BrandDto>>(url);
                 dgvBrands.DataSource = brands;
 
                 ClearInputs();
@@ -74,7 +69,7 @@ namespace MiniSupermarket.WinForms
             }
 
             var brand = new BrandDto { BrandName = txtName.Text.Trim(), Description = txtDescription.Text.Trim() };
-            var response = await _http.PostAsJsonAsync(API_URL, brand);
+            var response = await ApiClientService.Client.PostAsJsonAsync("brands", brand);
 
             if (response.IsSuccessStatusCode)
             {
@@ -94,7 +89,7 @@ namespace MiniSupermarket.WinForms
             int id = int.Parse(txtId.Text);
             var brand = new BrandDto { BrandId = id, BrandName = txtName.Text.Trim(), Description = txtDescription.Text.Trim() };
 
-            var response = await _http.PutAsJsonAsync($"{API_URL}/{id}", brand);
+            var response = await ApiClientService.Client.PutAsJsonAsync($"brands/{id}", brand);
             if (response.IsSuccessStatusCode)
             {
                 MessageBox.Show("Sửa thành công!");
@@ -109,7 +104,7 @@ namespace MiniSupermarket.WinForms
             if (MessageBox.Show("Bạn có chắc chắn muốn xóa?", "Xác nhận", MessageBoxButtons.YesNo) == DialogResult.Yes)
             {
                 int id = int.Parse(txtId.Text);
-                var response = await _http.DeleteAsync($"{API_URL}/{id}");
+                var response = await ApiClientService.Client.DeleteAsync($"brands/{id}");
                 if (response.IsSuccessStatusCode)
                 {
                     MessageBox.Show("Xóa thành công!");
@@ -129,8 +124,6 @@ namespace MiniSupermarket.WinForms
     public class BrandDto
     {
         public int BrandId { get; set; }
-
-        // Thêm dấu ? để không bị cảnh báo Non-nullable
         public string? BrandName { get; set; }
         public string? Description { get; set; }
     }

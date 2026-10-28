@@ -34,9 +34,11 @@ namespace MiniSupermarket.WinForms
             this.colBarcode = new DataGridViewTextBoxColumn();
             this.colProductName = new DataGridViewTextBoxColumn();
             this.colCategoryName = new DataGridViewTextBoxColumn();
+            this.colBrandName = new DataGridViewTextBoxColumn();
             this.colPrice = new DataGridViewTextBoxColumn();
             this.colStock = new DataGridViewTextBoxColumn();
             this.colCategoryId = new DataGridViewTextBoxColumn();
+            this.colBrandId = new DataGridViewTextBoxColumn();
 
             this.panelPaging = new Panel();
             this.btnPrev = new Button();
@@ -52,6 +54,8 @@ namespace MiniSupermarket.WinForms
             this.txtProductName = new TextBox();
             this.lblCategory = new Label();
             this.cboCategory = new ComboBox();
+            this.lblBrand = new Label();
+            this.cboBrand = new ComboBox();
             this.lblPrice = new Label();
             this.nudPrice = new NumericUpDown();
             this.lblStock = new Label();
@@ -93,7 +97,7 @@ namespace MiniSupermarket.WinForms
             this.lblSearchBarcode.Name = "lblSearchBarcode";
             this.lblSearchBarcode.Text = "Từ khóa / Mã vạch:";
 
-            // txtSearchBarcode (Compact width)
+            // txtSearchBarcode
             this.txtSearchBarcode.Font = new Font("Segoe UI", 10F);
             this.txtSearchBarcode.Location = new Point(148, 14);
             this.txtSearchBarcode.Name = "txtSearchBarcode";
@@ -109,7 +113,7 @@ namespace MiniSupermarket.WinForms
             this.lblFilterCategory.Name = "lblFilterCategory";
             this.lblFilterCategory.Text = "Lọc nhóm hàng:";
 
-            // cboFilterCategory (Compact width)
+            // cboFilterCategory
             this.cboFilterCategory.DropDownStyle = ComboBoxStyle.DropDownList;
             this.cboFilterCategory.Font = new Font("Segoe UI", 10F);
             this.cboFilterCategory.FormattingEnabled = true;
@@ -156,12 +160,14 @@ namespace MiniSupermarket.WinForms
             this.groupBoxDetails.Controls.Add(this.btnDelete);
             this.groupBoxDetails.Controls.Add(this.btnUpdate);
             this.groupBoxDetails.Controls.Add(this.btnAdd);
-            this.groupBoxDetails.Controls.Add(this.cboCategory);
-            this.groupBoxDetails.Controls.Add(this.lblCategory);
             this.groupBoxDetails.Controls.Add(this.nudStock);
             this.groupBoxDetails.Controls.Add(this.lblStock);
             this.groupBoxDetails.Controls.Add(this.nudPrice);
             this.groupBoxDetails.Controls.Add(this.lblPrice);
+            this.groupBoxDetails.Controls.Add(this.cboBrand);
+            this.groupBoxDetails.Controls.Add(this.lblBrand);
+            this.groupBoxDetails.Controls.Add(this.cboCategory);
+            this.groupBoxDetails.Controls.Add(this.lblCategory);
             this.groupBoxDetails.Controls.Add(this.txtProductName);
             this.groupBoxDetails.Controls.Add(this.lblProductName);
             this.groupBoxDetails.Controls.Add(this.txtBarcode);
@@ -182,100 +188,117 @@ namespace MiniSupermarket.WinForms
             this.lblId.AutoSize = true;
             this.lblId.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblId.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblId.Location = new Point(16, 32);
+            this.lblId.Location = new Point(16, 28);
             this.lblId.Name = "lblId";
             this.lblId.Text = "Mã sản phẩm (ID):";
 
             // txtId
             this.txtId.BackColor = Color.FromArgb(241, 245, 249);
-            this.txtId.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
-            this.txtId.Location = new Point(16, 54);
+            this.txtId.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.txtId.Location = new Point(16, 48);
             this.txtId.Name = "txtId";
             this.txtId.ReadOnly = true;
-            this.txtId.Size = new Size(278, 27);
+            this.txtId.Size = new Size(278, 25);
             this.txtId.TabIndex = 1;
 
             // lblBarcode
             this.lblBarcode.AutoSize = true;
             this.lblBarcode.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblBarcode.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblBarcode.Location = new Point(16, 90);
+            this.lblBarcode.Location = new Point(16, 80);
             this.lblBarcode.Name = "lblBarcode";
             this.lblBarcode.Text = "Mã vạch (Barcode):";
 
             // txtBarcode
-            this.txtBarcode.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
-            this.txtBarcode.Location = new Point(16, 112);
+            this.txtBarcode.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.txtBarcode.Location = new Point(16, 100);
             this.txtBarcode.Name = "txtBarcode";
             this.txtBarcode.PlaceholderText = "Nhập mã vạch...";
-            this.txtBarcode.Size = new Size(278, 27);
+            this.txtBarcode.Size = new Size(278, 25);
             this.txtBarcode.TabIndex = 2;
 
             // lblProductName
             this.lblProductName.AutoSize = true;
             this.lblProductName.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblProductName.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblProductName.Location = new Point(16, 148);
+            this.lblProductName.Location = new Point(16, 132);
             this.lblProductName.Name = "lblProductName";
             this.lblProductName.Text = "Tên sản phẩm:";
 
             // txtProductName
-            this.txtProductName.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
-            this.txtProductName.Location = new Point(16, 170);
+            this.txtProductName.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.txtProductName.Location = new Point(16, 152);
             this.txtProductName.Name = "txtProductName";
             this.txtProductName.PlaceholderText = "Nhập tên sản phẩm...";
-            this.txtProductName.Size = new Size(278, 27);
+            this.txtProductName.Size = new Size(278, 25);
             this.txtProductName.TabIndex = 3;
 
             // lblCategory
             this.lblCategory.AutoSize = true;
             this.lblCategory.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblCategory.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblCategory.Location = new Point(16, 206);
+            this.lblCategory.Location = new Point(16, 184);
             this.lblCategory.Name = "lblCategory";
-            this.lblCategory.Text = "Nhóm hàng (Danh mục):";
+            this.lblCategory.Text = "Nhóm hàng (Bảng Categories):";
 
             // cboCategory
             this.cboCategory.DropDownStyle = ComboBoxStyle.DropDownList;
-            this.cboCategory.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
+            this.cboCategory.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
             this.cboCategory.FormattingEnabled = true;
-            this.cboCategory.Location = new Point(16, 228);
+            this.cboCategory.Location = new Point(16, 204);
             this.cboCategory.Name = "cboCategory";
-            this.cboCategory.Size = new Size(278, 28);
+            this.cboCategory.Size = new Size(278, 26);
             this.cboCategory.TabIndex = 4;
+
+            // lblBrand
+            this.lblBrand.AutoSize = true;
+            this.lblBrand.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
+            this.lblBrand.ForeColor = Color.FromArgb(71, 85, 105);
+            this.lblBrand.Location = new Point(16, 236);
+            this.lblBrand.Name = "lblBrand";
+            this.lblBrand.Text = "Thương hiệu (Bảng Brands):";
+
+            // cboBrand
+            this.cboBrand.DropDownStyle = ComboBoxStyle.DropDownList;
+            this.cboBrand.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.cboBrand.FormattingEnabled = true;
+            this.cboBrand.Location = new Point(16, 256);
+            this.cboBrand.Name = "cboBrand";
+            this.cboBrand.Size = new Size(278, 26);
+            this.cboBrand.TabIndex = 5;
 
             // lblPrice
             this.lblPrice.AutoSize = true;
             this.lblPrice.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblPrice.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblPrice.Location = new Point(16, 266);
+            this.lblPrice.Location = new Point(16, 290);
             this.lblPrice.Name = "lblPrice";
             this.lblPrice.Text = "Đơn giá bán (VNĐ):";
 
-            // nudPrice (Compact side-by-side with Stock)
-            this.nudPrice.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
-            this.nudPrice.Location = new Point(16, 288);
+            // nudPrice
+            this.nudPrice.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.nudPrice.Location = new Point(16, 310);
             this.nudPrice.Maximum = new decimal(new int[] { 1000000000, 0, 0, 0 });
             this.nudPrice.Name = "nudPrice";
-            this.nudPrice.Size = new Size(165, 27);
-            this.nudPrice.TabIndex = 5;
+            this.nudPrice.Size = new Size(165, 25);
+            this.nudPrice.TabIndex = 6;
             this.nudPrice.ThousandsSeparator = true;
 
             // lblStock
             this.lblStock.AutoSize = true;
             this.lblStock.Font = new Font("Segoe UI", 9F, FontStyle.Regular);
             this.lblStock.ForeColor = Color.FromArgb(71, 85, 105);
-            this.lblStock.Location = new Point(192, 266);
+            this.lblStock.Location = new Point(192, 290);
             this.lblStock.Name = "lblStock";
             this.lblStock.Text = "Tồn kho:";
 
             // nudStock
-            this.nudStock.Font = new Font("Segoe UI", 10F, FontStyle.Regular);
-            this.nudStock.Location = new Point(192, 288);
+            this.nudStock.Font = new Font("Segoe UI", 9.5F, FontStyle.Regular);
+            this.nudStock.Location = new Point(192, 310);
             this.nudStock.Maximum = new decimal(new int[] { 1000000, 0, 0, 0 });
             this.nudStock.Name = "nudStock";
-            this.nudStock.Size = new Size(102, 27);
-            this.nudStock.TabIndex = 6;
+            this.nudStock.Size = new Size(102, 25);
+            this.nudStock.TabIndex = 7;
 
             // btnAdd
             this.btnAdd.BackColor = Color.FromArgb(22, 163, 74);
@@ -283,10 +306,10 @@ namespace MiniSupermarket.WinForms
             this.btnAdd.FlatStyle = FlatStyle.Flat;
             this.btnAdd.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             this.btnAdd.ForeColor = Color.White;
-            this.btnAdd.Location = new Point(16, 336);
+            this.btnAdd.Location = new Point(16, 352);
             this.btnAdd.Name = "btnAdd";
             this.btnAdd.Size = new Size(278, 38);
-            this.btnAdd.TabIndex = 7;
+            this.btnAdd.TabIndex = 8;
             this.btnAdd.Text = "➕ Thêm sản phẩm mới";
             this.btnAdd.UseVisualStyleBackColor = false;
             this.btnAdd.Cursor = Cursors.Hand;
@@ -298,10 +321,10 @@ namespace MiniSupermarket.WinForms
             this.btnUpdate.FlatStyle = FlatStyle.Flat;
             this.btnUpdate.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             this.btnUpdate.ForeColor = Color.White;
-            this.btnUpdate.Location = new Point(16, 384);
+            this.btnUpdate.Location = new Point(16, 400);
             this.btnUpdate.Name = "btnUpdate";
             this.btnUpdate.Size = new Size(134, 38);
-            this.btnUpdate.TabIndex = 8;
+            this.btnUpdate.TabIndex = 9;
             this.btnUpdate.Text = "✏️ Cập nhật";
             this.btnUpdate.UseVisualStyleBackColor = false;
             this.btnUpdate.Cursor = Cursors.Hand;
@@ -313,10 +336,10 @@ namespace MiniSupermarket.WinForms
             this.btnDelete.FlatStyle = FlatStyle.Flat;
             this.btnDelete.Font = new Font("Segoe UI", 9.5F, FontStyle.Bold);
             this.btnDelete.ForeColor = Color.White;
-            this.btnDelete.Location = new Point(160, 384);
+            this.btnDelete.Location = new Point(160, 400);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new Size(134, 38);
-            this.btnDelete.TabIndex = 9;
+            this.btnDelete.TabIndex = 10;
             this.btnDelete.Text = "🗑️ Xóa";
             this.btnDelete.UseVisualStyleBackColor = false;
             this.btnDelete.Cursor = Cursors.Hand;
@@ -427,9 +450,11 @@ namespace MiniSupermarket.WinForms
                 this.colBarcode,
                 this.colProductName,
                 this.colCategoryName,
+                this.colBrandName,
                 this.colPrice,
                 this.colStock,
-                this.colCategoryId
+                this.colCategoryId,
+                this.colBrandId
             });
             this.dgvProducts.Dock = DockStyle.Fill;
             this.dgvProducts.Location = new Point(0, 10);
@@ -448,14 +473,14 @@ namespace MiniSupermarket.WinForms
             this.colProductId.HeaderText = "Mã SP";
             this.colProductId.Name = "ProductId";
             this.colProductId.ReadOnly = true;
-            this.colProductId.Width = 65;
+            this.colProductId.Width = 60;
 
             // colBarcode
             this.colBarcode.DataPropertyName = "Barcode";
             this.colBarcode.HeaderText = "Mã Vạch";
             this.colBarcode.Name = "Barcode";
             this.colBarcode.ReadOnly = true;
-            this.colBarcode.Width = 120;
+            this.colBarcode.Width = 115;
 
             // colProductName
             this.colProductName.AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill;
@@ -464,19 +489,26 @@ namespace MiniSupermarket.WinForms
             this.colProductName.Name = "ProductName";
             this.colProductName.ReadOnly = true;
 
-            // colCategoryName (Hiển thị rõ Tên Nhóm Hàng trên bảng)
+            // colCategoryName
             this.colCategoryName.DataPropertyName = "CategoryName";
             this.colCategoryName.HeaderText = "Nhóm Hàng";
             this.colCategoryName.Name = "CategoryName";
             this.colCategoryName.ReadOnly = true;
-            this.colCategoryName.Width = 165;
+            this.colCategoryName.Width = 150;
+
+            // colBrandName
+            this.colBrandName.DataPropertyName = "BrandName";
+            this.colBrandName.HeaderText = "Thương Hiệu";
+            this.colBrandName.Name = "BrandName";
+            this.colBrandName.ReadOnly = true;
+            this.colBrandName.Width = 105;
 
             // colPrice
             this.colPrice.DataPropertyName = "Price";
             this.colPrice.HeaderText = "Đơn Giá";
             this.colPrice.Name = "Price";
             this.colPrice.ReadOnly = true;
-            this.colPrice.Width = 115;
+            this.colPrice.Width = 110;
             this.colPrice.DefaultCellStyle = new DataGridViewCellStyle { Format = "N0", Alignment = DataGridViewContentAlignment.MiddleRight };
 
             // colStock
@@ -484,15 +516,22 @@ namespace MiniSupermarket.WinForms
             this.colStock.HeaderText = "Tồn Kho";
             this.colStock.Name = "StockQuantity";
             this.colStock.ReadOnly = true;
-            this.colStock.Width = 85;
+            this.colStock.Width = 80;
             this.colStock.DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter };
 
-            // colCategoryId (Ẩn, dùng để đồng bộ khi chọn dòng)
+            // colCategoryId (Ẩn)
             this.colCategoryId.DataPropertyName = "CategoryId";
             this.colCategoryId.HeaderText = "Nhóm ID";
             this.colCategoryId.Name = "CategoryId";
             this.colCategoryId.ReadOnly = true;
             this.colCategoryId.Visible = false;
+
+            // colBrandId (Ẩn)
+            this.colBrandId.DataPropertyName = "BrandId";
+            this.colBrandId.HeaderText = "Brand ID";
+            this.colBrandId.Name = "BrandId";
+            this.colBrandId.ReadOnly = true;
+            this.colBrandId.Visible = false;
 
             // 
             // FormProductManagement
@@ -542,9 +581,11 @@ namespace MiniSupermarket.WinForms
         private DataGridViewTextBoxColumn colBarcode;
         private DataGridViewTextBoxColumn colProductName;
         private DataGridViewTextBoxColumn colCategoryName;
+        private DataGridViewTextBoxColumn colBrandName;
         private DataGridViewTextBoxColumn colPrice;
         private DataGridViewTextBoxColumn colStock;
         private DataGridViewTextBoxColumn colCategoryId;
+        private DataGridViewTextBoxColumn colBrandId;
 
         private Panel panelPaging;
         private Button btnPrev;
@@ -560,6 +601,8 @@ namespace MiniSupermarket.WinForms
         private TextBox txtProductName;
         private Label lblCategory;
         private ComboBox cboCategory;
+        private Label lblBrand;
+        private ComboBox cboBrand;
         private Label lblPrice;
         private NumericUpDown nudPrice;
         private Label lblStock;

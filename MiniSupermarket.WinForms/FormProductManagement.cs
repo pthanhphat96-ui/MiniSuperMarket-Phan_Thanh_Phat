@@ -8,7 +8,7 @@ using MiniSupermarket.WinForms.Services;
 
 namespace MiniSupermarket.WinForms
 {
-    // --- CÁC LỚP DTO Hứng dữ liệu từ API (Buổi 6 - Bước 3.3) ---
+    // --- CÁC LỚP DTO Hứng dữ liệu từ API (Buổi 6 - Bước 3.3 + Liên kết Category & Brand) ---
     public class ProductItemViewDto
     {
         public int ProductId { get; set; }
@@ -18,12 +18,20 @@ namespace MiniSupermarket.WinForms
         public int StockQuantity { get; set; }
         public int? CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+        public int? BrandId { get; set; }
+        public string BrandName { get; set; } = string.Empty;
     }
 
     public class CategoryComboDto
     {
         public int CategoryId { get; set; }
         public string CategoryName { get; set; } = string.Empty;
+    }
+
+    public class BrandComboDto
+    {
+        public int BrandId { get; set; }
+        public string BrandName { get; set; } = string.Empty;
     }
 
     public class PagedViewResult<T>
@@ -37,9 +45,8 @@ namespace MiniSupermarket.WinForms
 
     public partial class FormProductManagement : Form
     {
-        // Biến lưu trữ trạng thái phân trang hiện tại (Buổi 6 - Bước 3.3)
         private int _currentPage = 1;
-        private int _pageSize = 5; // Hiển thị 5 sản phẩm 1 trang để dễ test phân trang
+        private int _pageSize = 5;
         private int _totalPages = 1;
         private bool _isLoadingCategories = false;
 
@@ -48,15 +55,15 @@ namespace MiniSupermarket.WinForms
             InitializeComponent();
         }
 
-        // Sự kiện khi Form vừa mở lên
         private async void FormProductManagement_Load(object? sender, EventArgs e)
         {
             dgvProducts.AutoGenerateColumns = false;
-            await LoadCategoriesComboAsync(); // Phải nạp ComboBox trước
-            await LoadProductsPagedAsync();   // Sau đó mới nạp bảng Sản phẩm phân trang
+            await LoadCategoriesComboAsync();
+            await LoadBrandsComboAsync();
+            await LoadProductsPagedAsync();
         }
 
-        // 1. Hàm gọi API lấy danh sách Nhóm hàng đổ vào ComboBox (cboCategory & cboFilterCategory)
+        // 1. Nạp danh sách Nhóm hàng (Categories) vào ComboBox
         private async Task LoadCategoriesComboAsync()
         {
             try
@@ -66,12 +73,10 @@ namespace MiniSupermarket.WinForms
                 var categories = await ApiClientService.Client.GetFromJsonAsync<List<CategoryComboDto>>("categories")
                                  ?? new List<CategoryComboDto>();
 
-                // Nạp vào ComboBox chi tiết sản phẩm bên phải (cboCategory)
                 cboCategory.DataSource = categories.ToList();
-                cboCategory.DisplayMember = "CategoryName"; // Hiển thị Tên cho người dùng xem
-                cboCategory.ValueMember = "CategoryId";     // Lưu ngầm ID bên dưới để gửi về DB
+                cboCategory.DisplayMember = "CategoryName";
+                cboCategory.ValueMember = "CategoryId";
 
-                // Bài tập 6.2: Nạp vào ComboBox lọc nhóm hàng phía trên (cboFilterCategory)
                 var filterList = new List<CategoryComboDto>
                 {
                     new CategoryComboDto { CategoryId = 0, CategoryName = "-- Tất cả nhóm hàng --" }
@@ -93,7 +98,25 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // 2. Hàm gọi API Phân trang & Tìm kiếm & Lọc nhóm hàng (Buổi 6 - Bước 3.3 + Bài tập 6.2)
+        // 1.2. Nạp danh sách Thương hiệu (Brands) vào ComboBox
+        private async Task LoadBrandsComboAsync()
+        {
+            try
+            {
+                var brands = await ApiClientService.Client.GetFromJsonAsync<List<BrandComboDto>>("brands")
+                             ?? new List<BrandComboDto>();
+
+                cboBrand.DataSource = brands.ToList();
+                cboBrand.DisplayMember = "BrandName";
+                cboBrand.ValueMember = "BrandId";
+            }
+            catch
+            {
+                // Fallback nếu chưa có dữ liệu Brand
+            }
+        }
+
+        // 2. Gọi API Phân trang & Tìm kiếm & Lọc nhóm hàng
         private async Task LoadProductsPagedAsync()
         {
             try
@@ -110,7 +133,6 @@ namespace MiniSupermarket.WinForms
                     categoryId = dto.CategoryId;
                 }
 
-                // Ghép chuỗi Query String gửi lên Server
                 string url = $"products/paged?keyword={Uri.EscapeDataString(keyword)}&pageNumber={_currentPage}&pageSize={_pageSize}";
                 if (categoryId > 0)
                 {
@@ -121,15 +143,12 @@ namespace MiniSupermarket.WinForms
 
                 if (result != null)
                 {
-                    // Đổ dữ liệu 5 dòng vào Bảng
                     dgvProducts.DataSource = null;
                     dgvProducts.DataSource = result.Items;
 
-                    // Cập nhật trạng thái Phân trang
                     _totalPages = result.TotalPages == 0 ? 1 : result.TotalPages;
                     lblPaging.Text = $"Trang {result.CurrentPage} / {_totalPages} (Tổng: {result.TotalItems} SP)";
 
-                    // Bật/Tắt nút chuyển trang hợp lý
                     btnPrev.Enabled = _currentPage > 1;
                     btnNext.Enabled = _currentPage < _totalPages;
                 }
@@ -140,7 +159,6 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // --- CÁC SỰ KIỆN NÚT BẤM PHÂN TRANG & TÌM KIẾM ---
         private async void btnPrev_Click(object? sender, EventArgs e)
         {
             if (_currentPage > 1)
@@ -161,11 +179,10 @@ namespace MiniSupermarket.WinForms
 
         private async void btnSearch_Click(object? sender, EventArgs e)
         {
-            _currentPage = 1; // Khi bấm tìm kiếm mới, phải đưa trang về 1
+            _currentPage = 1;
             await LoadProductsPagedAsync();
         }
 
-        // Bài tập 6.2: Khi chọn mục khác trong ComboBox lọc nhóm hàng -> tự động lọc lại ở trang 1
         private async void cboFilterCategory_SelectedIndexChanged(object? sender, EventArgs e)
         {
             if (_isLoadingCategories) return;
@@ -173,8 +190,6 @@ namespace MiniSupermarket.WinForms
             await LoadProductsPagedAsync();
         }
 
-        // --- CÁC SỰ KIỆN CRUD (THÊM, SỬA, XÓA) ---
-        // Bấm vào 1 dòng trên lưới -> Đổ dữ liệu lên các ô nhập liệu và chọn đúng ComboBox
         private void dgvProducts_CellClick(object? sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex >= 0)
@@ -186,20 +201,29 @@ namespace MiniSupermarket.WinForms
                 nudPrice.Value = Convert.ToDecimal(row.Cells["Price"].Value ?? 0);
                 nudStock.Value = Convert.ToInt32(row.Cells["StockQuantity"].Value ?? 0);
 
-                // Tự động nhảy ComboBox về đúng Nhóm hàng của sản phẩm đang chọn
                 if (row.Cells["CategoryId"].Value != null)
                 {
                     cboCategory.SelectedValue = Convert.ToInt32(row.Cells["CategoryId"].Value);
                 }
+
+                if (row.Cells["BrandId"]?.Value != null && cboBrand.Items.Count > 0)
+                {
+                    cboBrand.SelectedValue = Convert.ToInt32(row.Cells["BrandId"].Value);
+                }
             }
         }
 
-        // Nút Thêm mới Sản phẩm
         private async void btnAdd_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrWhiteSpace(txtBarcode.Text) || string.IsNullOrWhiteSpace(txtProductName.Text))
             {
                 MessageBox.Show("Vui lòng nhập đầy đủ Mã vạch và Tên sản phẩm!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (nudPrice.Value <= 0)
+            {
+                MessageBox.Show("Đơn giá bán sản phẩm phải lớn hơn 0!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -215,15 +239,15 @@ namespace MiniSupermarket.WinForms
                 ProductName = txtProductName.Text.Trim(),
                 Price = nudPrice.Value,
                 StockQuantity = (int)nudStock.Value,
-                CategoryId = (int)cboCategory.SelectedValue, // Lấy ID từ ComboBox
-                BrandId = 1
+                CategoryId = Convert.ToInt32(cboCategory.SelectedValue),
+                BrandId = cboBrand.SelectedValue != null ? Convert.ToInt32(cboBrand.SelectedValue) : 1
             };
 
             var response = await ApiClientService.Client.PostAsJsonAsync("products", newProduct);
             if (response.IsSuccessStatusCode)
             {
                 MessageBox.Show("Thêm sản phẩm thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                await LoadProductsPagedAsync(); // Tải lại bảng
+                await LoadProductsPagedAsync();
                 ClearInputs();
             }
             else
@@ -233,12 +257,17 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // Nút Cập nhật Sản phẩm
         private async void btnUpdate_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(txtId.Text))
             {
                 MessageBox.Show("Vui lòng chọn sản phẩm cần cập nhật!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (nudPrice.Value <= 0)
+            {
+                MessageBox.Show("Đơn giá bán sản phẩm phải lớn hơn 0!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -252,7 +281,7 @@ namespace MiniSupermarket.WinForms
                 Price = nudPrice.Value,
                 StockQuantity = (int)nudStock.Value,
                 CategoryId = cboCategory.SelectedValue != null ? Convert.ToInt32(cboCategory.SelectedValue) : 1,
-                BrandId = 1
+                BrandId = cboBrand.SelectedValue != null ? Convert.ToInt32(cboBrand.SelectedValue) : 1
             };
 
             var res = await ApiClientService.Client.PutAsJsonAsync($"products/{id}", updateProd);
@@ -268,7 +297,6 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // Nút Xóa Sản phẩm
         private async void btnDelete_Click(object? sender, EventArgs e)
         {
             if (string.IsNullOrEmpty(txtId.Text))
@@ -295,12 +323,12 @@ namespace MiniSupermarket.WinForms
             }
         }
 
-        // Nút Làm mới
         private async void btnLoad_Click(object? sender, EventArgs e)
         {
             txtSearchBarcode.Clear();
             _currentPage = 1;
             await LoadCategoriesComboAsync();
+            await LoadBrandsComboAsync();
             await LoadProductsPagedAsync();
             ClearInputs();
         }
@@ -314,6 +342,8 @@ namespace MiniSupermarket.WinForms
             nudStock.Value = 0;
             if (cboCategory.Items.Count > 0)
                 cboCategory.SelectedIndex = 0;
+            if (cboBrand.Items.Count > 0)
+                cboBrand.SelectedIndex = 0;
         }
     }
 }

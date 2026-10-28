@@ -3,11 +3,9 @@
  * Ngay tao: 22/10/2026
  * Mo ta: API Thanh toan POS da bang duoc bao ve boi SqlTransaction (ACID) (Buoi 5 - Tiet 5)
  */
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MiniSupermarket.API.Models;
-// Ánh xạ tương thích chuẩn ADO.NET cho MySQL (XAMPP)
-// Nếu dùng SQL Server chỉ cần mở comment dòng dưới:
-// using Microsoft.Data.SqlClient;
 using SqlConnection = MySqlConnector.MySqlConnection;
 using SqlCommand = MySqlConnector.MySqlCommand;
 using SqlDataReader = MySqlConnector.MySqlDataReader;
@@ -17,11 +15,11 @@ namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "Admin,Cashier")] // Tiêu chí 29 & 30: Admin và Thu ngân mới được thanh toán POS
     public class CheckoutController : ControllerBase
     {
         private readonly IConfiguration _configuration;
 
-        // Tiêm IConfiguration de doc chuoi ket noi CSDL
         public CheckoutController(IConfiguration configuration)
         {
             _configuration = configuration;
@@ -32,9 +30,8 @@ namespace MiniSupermarket.API.Controllers
         // Chuc nang: Thanh toan hoa don, tru ton kho va tich diem trong 1 Transaction
         // =========================================================================
         [HttpPost]
-        public IActionResult ProcessCheckout([FromBody] CheckoutRequestDto request)
+        public async Task<IActionResult> ProcessCheckout([FromBody] CheckoutRequestDto request)
         {
-            // 1. Kiem tra tinh hop le cua gio hang
             if (request.Items == null || request.Items.Count == 0)
             {
                 return BadRequest(new { message = "Giỏ hàng rỗng, không thể tiến hành thanh toán!" });
@@ -49,30 +46,25 @@ namespace MiniSupermarket.API.Controllers
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
 
-                // 2. KHOI TAO TRANSACTION (Bat dau phien giao dich khep kin bao ve ACID)
-                SqlTransaction transaction = connection.BeginTransaction();
+                // KHOI TAO TRANSACTION (Bat dau phien giao dich khep kin bao ve ACID - Tiêu chí 35)
+                SqlTransaction transaction = await connection.BeginTransactionAsync();
 
                 try
                 {
-                    // Tinh toan tong tien, tong so luong va diem thuong tich luy
                     decimal finalAmount = request.Items.Sum(i => i.Quantity * i.UnitPrice);
                     int totalItems = request.Items.Sum(i => i.Quantity);
-
-                    // Quy tac tich diem sieu thi: Cu moi 10.000d mua hang duoc tang 1 diem thuong
                     int rewardPoints = (int)(finalAmount / 10000);
-
-                    // Sinh ma hoa don theo cau truc: HD-YYYYMMDD-XXXX (4 ky tu ngau nhien)
                     string orderCode = $"HD-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString().Substring(0, 4).ToUpper()}";
 
-                    // Tra cuu CashierId tu bang Users (mac dinh 8 = cashier01 neu khong tim thay)
+                    // Tra cứu khóa ngoại CashierId từ bảng Users
                     int cashierId = 8;
                     string findCashierSql = "SELECT UserId FROM Users WHERE Username = @Username LIMIT 1";
                     using (SqlCommand cmdCashier = new SqlCommand(findCashierSql, connection, transaction))
                     {
                         cmdCashier.Parameters.AddWithValue("@Username", request.CashierUsername.Trim());
-                        object? foundId = cmdCashier.ExecuteScalar();
+                        object? foundId = await cmdCashier.ExecuteScalarAsync();
                         if (foundId != null && foundId != DBNull.Value)
                         {
                             cashierId = Convert.ToInt32(foundId);
@@ -82,7 +74,6 @@ namespace MiniSupermarket.API.Controllers
                     // =====================================================================
                     // BƯỚC 1: TAO HOA DON TONG THE TRONG BANG Orders
                     // =====================================================================
-                    // (Ghi chú: Trên SQL Server dùng OUTPUT INSERTED.OrderId, trên MySQL dùng SELECT LAST_INSERT_ID())
                     string insertOrderSql = @"
                         INSERT INTO Orders (
                             OrderCode, CreatedDate, CashierUsername, CustomerId, TotalItems, FinalAmount, RewardPoints,
@@ -97,7 +88,6 @@ namespace MiniSupermarket.API.Controllers
                     int orderId = 0;
                     using (SqlCommand cmdOrder = new SqlCommand(insertOrderSql, connection, transaction))
                     {
-                        // Gan tham so an toan
                         cmdOrder.Parameters.AddWithValue("@OrderCode", orderCode);
                         cmdOrder.Parameters.AddWithValue("@CashierUsername", request.CashierUsername.Trim());
                         cmdOrder.Parameters.AddWithValue("@CustomerId", request.CustomerId > 0 ? request.CustomerId : (object)DBNull.Value);
@@ -106,8 +96,7 @@ namespace MiniSupermarket.API.Controllers
                         cmdOrder.Parameters.AddWithValue("@RewardPoints", rewardPoints);
                         cmdOrder.Parameters.AddWithValue("@CashierId", cashierId);
 
-                        // ExecuteScalar() tra ve gia tri OrderId vua duoc he thong sinh ra
-                        orderId = Convert.ToInt32(cmdOrder.ExecuteScalar());
+                        orderId = Convert.ToInt32(await cmdOrder.ExecuteScalarAsync());
                     }
 
                     // =====================================================================
@@ -115,7 +104,6 @@ namespace MiniSupermarket.API.Controllers
                     // =====================================================================
                     foreach (var item in request.Items)
                     {
-                        // 3.1. Kiem tra so luong ton kho thuc te truoc khi tru
                         string checkStockSql = "SELECT StockQuantity, ProductName FROM Products WHERE ProductId = @ProductId";
                         int currentStock = 0;
                         string productName = string.Empty;
@@ -124,9 +112,9 @@ namespace MiniSupermarket.API.Controllers
                         {
                             cmdCheck.Parameters.AddWithValue("@ProductId", item.ProductId);
 
-                            using (SqlDataReader reader = cmdCheck.ExecuteReader())
+                            using (SqlDataReader reader = await cmdCheck.ExecuteReaderAsync())
                             {
-                                if (!reader.Read())
+                                if (!await reader.ReadAsync())
                                 {
                                     throw new InvalidOperationException($"Không tìm thấy sản phẩm có ID: {item.ProductId}");
                                 }
@@ -135,7 +123,6 @@ namespace MiniSupermarket.API.Controllers
                             }
                         }
 
-                        // 3.2. DIEM KIEM SOAT LOGIC: Neu so luong mua vuot qua ton kho -> Kich hoat Exception
                         if (currentStock < item.Quantity)
                         {
                             throw new InvalidOperationException(
@@ -143,7 +130,6 @@ namespace MiniSupermarket.API.Controllers
                                 $"(Tồn kho thực tế: {currentStock}, Số lượng yêu cầu mua: {item.Quantity})");
                         }
 
-                        // 3.3. Them dong chi tiet vao bang OrderDetails
                         string insertDetailSql = @"
                             INSERT INTO OrderDetails (OrderId, ProductId, Quantity, UnitPrice, LineTotal)
                             VALUES (@OrderId, @ProductId, @Quantity, @UnitPrice, @LineTotal)";
@@ -155,10 +141,9 @@ namespace MiniSupermarket.API.Controllers
                             cmdDetail.Parameters.AddWithValue("@Quantity", item.Quantity);
                             cmdDetail.Parameters.AddWithValue("@UnitPrice", item.UnitPrice);
                             cmdDetail.Parameters.AddWithValue("@LineTotal", item.Quantity * item.UnitPrice);
-                            cmdDetail.ExecuteNonQuery();
+                            await cmdDetail.ExecuteNonQueryAsync();
                         }
 
-                        // 3.4. Khau tru so luong ton kho trong bang Products
                         string updateStockSql = @"
                             UPDATE Products
                             SET StockQuantity = StockQuantity - @Qty
@@ -168,7 +153,7 @@ namespace MiniSupermarket.API.Controllers
                         {
                             cmdStock.Parameters.AddWithValue("@Qty", item.Quantity);
                             cmdStock.Parameters.AddWithValue("@ProductId", item.ProductId);
-                            cmdStock.ExecuteNonQuery();
+                            await cmdStock.ExecuteNonQueryAsync();
                         }
                     }
 
@@ -186,16 +171,15 @@ namespace MiniSupermarket.API.Controllers
                         {
                             cmdCustomer.Parameters.AddWithValue("@Points", rewardPoints);
                             cmdCustomer.Parameters.AddWithValue("@CustomerId", request.CustomerId);
-                            cmdCustomer.ExecuteNonQuery();
+                            await cmdCustomer.ExecuteNonQueryAsync();
                         }
                     }
 
                     // =====================================================================
                     // BƯỚC 5: XAC NHAN LUU VINH VIEN TOAN BO THAO TAC (COMMIT)
                     // =====================================================================
-                    transaction.Commit();
+                    await transaction.CommitAsync();
 
-                    // Tra ve ket qua thanh cong voi ma 200 OK
                     return Ok(new
                     {
                         success = true,
@@ -214,7 +198,7 @@ namespace MiniSupermarket.API.Controllers
                     // =====================================================================
                     try
                     {
-                        transaction.Rollback();
+                        await transaction.RollbackAsync();
                     }
                     catch (Exception rollbackEx)
                     {
@@ -225,7 +209,6 @@ namespace MiniSupermarket.API.Controllers
                         });
                     }
 
-                    // Tra ve thong bao loi than thien va ma 400 BadRequest
                     return BadRequest(new
                     {
                         success = false,
@@ -241,18 +224,17 @@ namespace MiniSupermarket.API.Controllers
         // DELETE: api/checkout/cancel/{orderId}
         // =========================================================================
         [HttpDelete("cancel/{orderId}")]
-        public IActionResult CancelOrder(int orderId)
+        public async Task<IActionResult> CancelOrder(int orderId)
         {
             string connectionString = _configuration.GetConnectionString("DefaultConnection")!;
 
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                connection.Open();
-                SqlTransaction transaction = connection.BeginTransaction();
+                await connection.OpenAsync();
+                SqlTransaction transaction = await connection.BeginTransactionAsync();
 
                 try
                 {
-                    // 1. Kiem tra hoa don va lay thong tin khach hang, diem thuong
                     string getOrderSql = "SELECT CustomerId, RewardPoints FROM Orders WHERE OrderId = @OrderId";
                     int customerId = 0;
                     int pointsToDeduct = 0;
@@ -260,9 +242,9 @@ namespace MiniSupermarket.API.Controllers
                     using (SqlCommand cmdGet = new SqlCommand(getOrderSql, connection, transaction))
                     {
                         cmdGet.Parameters.AddWithValue("@OrderId", orderId);
-                        using (SqlDataReader reader = cmdGet.ExecuteReader())
+                        using (SqlDataReader reader = await cmdGet.ExecuteReaderAsync())
                         {
-                            if (!reader.Read())
+                            if (!await reader.ReadAsync())
                             {
                                 throw new InvalidOperationException($"Không tìm thấy hóa đơn ID = {orderId} để hủy!");
                             }
@@ -275,16 +257,15 @@ namespace MiniSupermarket.API.Controllers
                         }
                     }
 
-                    // 2. Lay danh sach san pham da mua de hoan tra kho
                     var itemsToRestore = new List<(int ProductId, int Quantity)>();
                     string getDetailsSql = "SELECT ProductId, Quantity FROM OrderDetails WHERE OrderId = @OrderId";
 
                     using (SqlCommand cmdDetails = new SqlCommand(getDetailsSql, connection, transaction))
                     {
                         cmdDetails.Parameters.AddWithValue("@OrderId", orderId);
-                        using (SqlDataReader reader = cmdDetails.ExecuteReader())
+                        using (SqlDataReader reader = await cmdDetails.ExecuteReaderAsync())
                         {
-                            while (reader.Read())
+                            while (await reader.ReadAsync())
                             {
                                 itemsToRestore.Add((
                                     Convert.ToInt32(reader["ProductId"]),
@@ -294,7 +275,6 @@ namespace MiniSupermarket.API.Controllers
                         }
                     }
 
-                    // 3. Hoan tra ton kho trong bang Products
                     foreach (var item in itemsToRestore)
                     {
                         string restoreStockSql = @"
@@ -306,11 +286,10 @@ namespace MiniSupermarket.API.Controllers
                         {
                             cmdRestore.Parameters.AddWithValue("@Qty", item.Quantity);
                             cmdRestore.Parameters.AddWithValue("@ProductId", item.ProductId);
-                            cmdRestore.ExecuteNonQuery();
+                            await cmdRestore.ExecuteNonQueryAsync();
                         }
                     }
 
-                    // 4. Khau tru diem thuong da tich cua khach hang
                     if (pointsToDeduct > 0 && customerId > 0)
                     {
                         string deductPointsSql = @"
@@ -325,28 +304,25 @@ namespace MiniSupermarket.API.Controllers
                         {
                             cmdDeduct.Parameters.AddWithValue("@Pts", pointsToDeduct);
                             cmdDeduct.Parameters.AddWithValue("@CustomerId", customerId);
-                            cmdDeduct.ExecuteNonQuery();
+                            await cmdDeduct.ExecuteNonQueryAsync();
                         }
                     }
 
-                    // 5. Xoa chi tiet hoa don truoc (tranh vi pham rang buoc khoa ngoai)
                     string deleteDetailsSql = "DELETE FROM OrderDetails WHERE OrderId = @OrderId";
                     using (SqlCommand cmdDelDetails = new SqlCommand(deleteDetailsSql, connection, transaction))
                     {
                         cmdDelDetails.Parameters.AddWithValue("@OrderId", orderId);
-                        cmdDelDetails.ExecuteNonQuery();
+                        await cmdDelDetails.ExecuteNonQueryAsync();
                     }
 
-                    // 6. Xoa hoa don tong trong bang Orders
                     string deleteOrderSql = "DELETE FROM Orders WHERE OrderId = @OrderId";
                     using (SqlCommand cmdDelOrder = new SqlCommand(deleteOrderSql, connection, transaction))
                     {
                         cmdDelOrder.Parameters.AddWithValue("@OrderId", orderId);
-                        cmdDelOrder.ExecuteNonQuery();
+                        await cmdDelOrder.ExecuteNonQueryAsync();
                     }
 
-                    // 7. Xac nhan luu vinh vien (Commit)
-                    transaction.Commit();
+                    await transaction.CommitAsync();
 
                     return Ok(new
                     {
@@ -356,8 +332,7 @@ namespace MiniSupermarket.API.Controllers
                 }
                 catch (Exception ex)
                 {
-                    // Hoan tac sach se khi co loi
-                    transaction.Rollback();
+                    await transaction.RollbackAsync();
                     return BadRequest(new
                     {
                         success = false,

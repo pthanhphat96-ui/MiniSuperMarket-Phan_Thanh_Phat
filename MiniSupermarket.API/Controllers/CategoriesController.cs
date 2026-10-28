@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
@@ -8,19 +8,18 @@ namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Phải có JWT Token mới được gọi API
+    [Authorize] // Tiêu chí 29: Phải có JWT Token mới được gọi API
     public class CategoriesController : ControllerBase
     {
         private readonly SupermarketDbContext _context;
 
-        // Tiêm DbContext thông qua Constructor Injection
         public CategoriesController(SupermarketDbContext context)
         {
             _context = context;
         }
 
         // =========================================================
-        // 1. READ: Lấy toàn bộ danh mục từ SQL Server
+        // 1. READ: Lấy toàn bộ danh mục (Trả về CategoryDto - Tiêu chí 15, 27)
         // GET: /api/categories
         // =========================================================
         [HttpGet]
@@ -28,6 +27,13 @@ namespace MiniSupermarket.API.Controllers
         {
             var list = await _context.Categories
                 .AsNoTracking()
+                .OrderBy(c => c.CategoryId)
+                .Select(c => new CategoryDto
+                {
+                    CategoryId = c.CategoryId,
+                    CategoryName = c.CategoryName,
+                    Description = c.Description
+                })
                 .ToListAsync();
 
             return Ok(list);
@@ -42,7 +48,14 @@ namespace MiniSupermarket.API.Controllers
         {
             var category = await _context.Categories
                 .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.CategoryId == id);
+                .Where(c => c.CategoryId == id)
+                .Select(c => new CategoryDto
+                {
+                    CategoryId = c.CategoryId,
+                    CategoryName = c.CategoryName,
+                    Description = c.Description
+                })
+                .FirstOrDefaultAsync();
 
             if (category == null)
             {
@@ -56,8 +69,8 @@ namespace MiniSupermarket.API.Controllers
         }
 
         // =========================================================
-        // 3. SEARCH: Tìm kiếm danh mục
-        // GET: /api/categories/search?keyword=bánh
+        // 3. SEARCH: Tìm kiếm danh mục bằng LINQ
+        // GET: /api/categories/search?keyword=đèn
         // =========================================================
         [HttpGet("search")]
         public async Task<IActionResult> Search([FromQuery] string keyword)
@@ -70,29 +83,34 @@ namespace MiniSupermarket.API.Controllers
                 });
             }
 
-            // EF Core sẽ dịch LINQ thành SQL tương ứng
             var result = await _context.Categories
                 .AsNoTracking()
                 .Where(c => c.CategoryName.Contains(keyword))
+                .Select(c => new CategoryDto
+                {
+                    CategoryId = c.CategoryId,
+                    CategoryName = c.CategoryName,
+                    Description = c.Description
+                })
                 .ToListAsync();
 
             return Ok(result);
         }
 
         // =========================================================
-        // 4. CREATE: Thêm mới danh mục
+        // 4. CREATE: Thêm mới danh mục (Tiêu chí 30: Phân quyền Admin)
         // POST: /api/categories
         // =========================================================
         [HttpPost]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> Create([FromBody] Category newCat)
+        [Authorize(Roles = "Admin,Warehouse")]
+        public async Task<IActionResult> Create([FromBody] CategoryDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            if (string.IsNullOrWhiteSpace(newCat.CategoryName))
+            if (string.IsNullOrWhiteSpace(dto.CategoryName))
             {
                 return BadRequest(new
                 {
@@ -100,15 +118,21 @@ namespace MiniSupermarket.API.Controllers
                 });
             }
 
-            _context.Categories.Add(newCat);
+            var newCat = new Category
+            {
+                CategoryName = dto.CategoryName.Trim(),
+                Description = dto.Description?.Trim()
+            };
 
-            // Lưu dữ liệu vào SQL Server
+            _context.Categories.Add(newCat);
             await _context.SaveChangesAsync();
+
+            dto.CategoryId = newCat.CategoryId;
 
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = newCat.CategoryId },
-                newCat
+                dto
             );
         }
 
@@ -117,10 +141,10 @@ namespace MiniSupermarket.API.Controllers
         // PUT: /api/categories/1
         // =========================================================
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Warehouse")]
         public async Task<IActionResult> Update(
             int id,
-            [FromBody] Category updateCat)
+            [FromBody] CategoryDto updateDto)
         {
             if (!ModelState.IsValid)
             {
@@ -137,7 +161,7 @@ namespace MiniSupermarket.API.Controllers
                 });
             }
 
-            if (string.IsNullOrWhiteSpace(updateCat.CategoryName))
+            if (string.IsNullOrWhiteSpace(updateDto.CategoryName))
             {
                 return BadRequest(new
                 {
@@ -145,10 +169,9 @@ namespace MiniSupermarket.API.Controllers
                 });
             }
 
-            cat.CategoryName = updateCat.CategoryName;
-            cat.Description = updateCat.Description;
+            cat.CategoryName = updateDto.CategoryName.Trim();
+            cat.Description = updateDto.Description?.Trim();
 
-            // Lưu thay đổi vào SQL Server
             await _context.SaveChangesAsync();
 
             return NoContent();
@@ -159,7 +182,7 @@ namespace MiniSupermarket.API.Controllers
         // DELETE: /api/categories/1
         // =========================================================
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Warehouse")]
         public async Task<IActionResult> Delete(int id)
         {
             var cat = await _context.Categories.FindAsync(id);
@@ -173,40 +196,42 @@ namespace MiniSupermarket.API.Controllers
             }
 
             _context.Categories.Remove(cat);
-
-            // Lưu thay đổi vào SQL Server
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
         // =========================================================
-        // 7. ADMIN DASHBOARD
+        // 7. ADMIN DASHBOARD (Chỉ Admin được truy cập - Tiêu chí 30)
         // GET: /api/categories/admin-dashboard
-        // Chỉ Admin được truy cập
         // =========================================================
         [HttpGet("admin-dashboard")]
         [Authorize(Roles = "Admin")]
-        public IActionResult GetAdminDashboard()
+        public async Task<IActionResult> GetAdminDashboard()
         {
+            int totalCategories = await _context.Categories.AsNoTracking().CountAsync();
+            int totalProducts = await _context.Products.AsNoTracking().CountAsync();
             return Ok(new
             {
-                message = "Chào mừng Admin! Bạn có toàn quyền quản trị hệ thống siêu thị mini."
+                message = "Chào mừng Admin! Bạn có toàn quyền quản trị hệ thống siêu thị mini.",
+                totalCategories,
+                totalProducts
             });
         }
 
         // =========================================================
-        // 8. STAFF POS
+        // 8. STAFF POS (Admin và Cashier đều được truy cập - Tiêu chí 30)
         // GET: /api/categories/staff-pos
-        // Admin và Cashier đều được truy cập
         // =========================================================
         [HttpGet("staff-pos")]
         [Authorize(Roles = "Admin,Cashier")]
-        public IActionResult GetStaffPos()
+        public async Task<IActionResult> GetStaffPos()
         {
+            int activeProducts = await _context.Products.AsNoTracking().CountAsync(p => p.StockQuantity > 0);
             return Ok(new
             {
-                message = "Màn hình POS Thu ngân sẵn sàng phục vụ bán hàng."
+                message = "Màn hình POS Thu ngân sẵn sàng phục vụ bán hàng.",
+                activeProducts
             });
         }
     }

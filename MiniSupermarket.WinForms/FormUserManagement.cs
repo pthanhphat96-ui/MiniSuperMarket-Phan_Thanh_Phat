@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -39,50 +40,9 @@ namespace MiniSupermarket.WinForms
                 var users = await ApiClientService.Client.GetFromJsonAsync<List<UserDto>>("users")
                             ?? new List<UserDto>();
 
+                dgvUsers.AutoGenerateColumns = false;
                 dgvUsers.DataSource = null;
                 dgvUsers.DataSource = users;
-
-                if (dgvUsers.Columns["Id"] != null)
-                {
-                    dgvUsers.Columns["Id"].HeaderText = "Mã NV";
-                    dgvUsers.Columns["Id"].FillWeight = 14F;
-                }
-
-                if (dgvUsers.Columns["UserId"] != null)
-                    dgvUsers.Columns["UserId"].Visible = false;
-
-                if (dgvUsers.Columns["Username"] != null)
-                {
-                    dgvUsers.Columns["Username"].HeaderText = "Tên đăng nhập";
-                    dgvUsers.Columns["Username"].FillWeight = 22F;
-                }
-
-                if (dgvUsers.Columns["FullName"] != null)
-                {
-                    dgvUsers.Columns["FullName"].HeaderText = "Họ và tên";
-                    dgvUsers.Columns["FullName"].FillWeight = 28F;
-                }
-
-                if (dgvUsers.Columns["Email"] != null)
-                {
-                    dgvUsers.Columns["Email"].HeaderText = "Email";
-                    dgvUsers.Columns["Email"].FillWeight = 26F;
-                }
-
-                if (dgvUsers.Columns["Role"] != null)
-                {
-                    dgvUsers.Columns["Role"].HeaderText = "Vai trò";
-                    dgvUsers.Columns["Role"].FillWeight = 18F;
-                }
-
-                if (dgvUsers.Columns["IsActive"] != null)
-                    dgvUsers.Columns["IsActive"].Visible = false;
-
-                if (dgvUsers.Columns["StatusText"] != null)
-                {
-                    dgvUsers.Columns["StatusText"].HeaderText = "Trạng thái";
-                    dgvUsers.Columns["StatusText"].FillWeight = 24F;
-                }
 
                 // Tô màu trực quan cho tài khoản bị khóa / đang hoạt động
                 foreach (DataGridViewRow row in dgvUsers.Rows)
@@ -127,6 +87,7 @@ namespace MiniSupermarket.WinForms
                 Password = txtPassword.Text.Trim(),
                 FullName = txtFullName.Text.Trim(),
                 Email = txtEmail.Text.Trim(),
+                Phone = txtPhone.Text.Trim(),
                 Role = cboRole.SelectedItem?.ToString() ?? "Cashier",
                 IsActive = true
             };
@@ -185,6 +146,7 @@ namespace MiniSupermarket.WinForms
             {
                 FullName = txtFullName.Text.Trim(),
                 Email = txtEmail.Text.Trim(),
+                Phone = txtPhone.Text.Trim(),
                 Password = string.IsNullOrWhiteSpace(txtPassword.Text) ? null : txtPassword.Text.Trim(),
                 Role = cboRole.SelectedItem?.ToString() ?? "Cashier",
                 IsActive = _selectedIsActive
@@ -409,6 +371,7 @@ namespace MiniSupermarket.WinForms
                 txtUsername.Text = u.Username;
                 txtFullName.Text = u.FullName;
                 txtEmail.Text = u.Email;
+                txtPhone.Text = u.Phone;
                 txtPassword.Clear();
 
                 if (cboRole.Items.Contains(u.Role))
@@ -431,6 +394,7 @@ namespace MiniSupermarket.WinForms
             txtUsername.Clear();
             txtFullName.Clear();
             txtEmail.Clear();
+            txtPhone.Clear();
             txtPassword.Clear();
             cboRole.SelectedIndex = 1;
             btnToggleLock.Text = "🔒 Khóa / Mở khóa tài khoản";
@@ -440,15 +404,27 @@ namespace MiniSupermarket.WinForms
 
     public class UserDto
     {
+        [Browsable(false)]
         public int Id { get; set; }
+
+        [Browsable(false)]
         public int UserId { get; set; }
+
         public int EffectiveId => Id > 0 ? Id : UserId;
 
         public string Username { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+
+        [Browsable(false)]
+        public int RoleId { get; set; }
+
         public string Role { get; set; } = string.Empty;
+
+        [Browsable(false)]
         public bool IsActive { get; set; }
+
         public string StatusText => IsActive ? "🟢 Đang hoạt động" : "🔴 Đã khóa";
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
@@ -7,6 +8,7 @@ namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Tiêu chí 29: Chặn API khi chưa đăng nhập (trả về 401 Unauthorized)
     public class ProductsController : ControllerBase
     {
         private readonly SupermarketDbContext _context;
@@ -16,12 +18,43 @@ namespace MiniSupermarket.API.Controllers
             _context = context;
         }
 
-        // 1. READ: Lấy toàn bộ danh sách sản phẩm kèm thông tin Nhóm hàng (Category)
+        // Hàm ánh xạ Entity Product sang ProductItemDto (Tiêu chí 15 & kết nối quan hệ Category + Brand)
+        private static ProductItemDto MapToDto(Product p)
+        {
+            return new ProductItemDto
+            {
+                ProductId = p.ProductId,
+                Barcode = p.Barcode,
+                ProductName = p.ProductName,
+                Price = p.Price,
+                StockQuantity = p.StockQuantity,
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category != null ? p.Category.CategoryName : "Chưa phân loại",
+                BrandId = p.BrandId,
+                BrandName = p.Brand != null ? p.Brand.BrandName : "Chưa rõ thương hiệu",
+                Category = p.Category != null ? new CategoryDto
+                {
+                    CategoryId = p.Category.CategoryId,
+                    CategoryName = p.Category.CategoryName,
+                    Description = p.Category.Description
+                } : null,
+                Brand = p.Brand != null ? new BrandDto
+                {
+                    BrandId = p.Brand.BrandId,
+                    BrandName = p.Brand.BrandName,
+                    Description = p.Brand.Description,
+                    LogoUrl = p.Brand.LogoUrl
+                } : null
+            };
+        }
+
+        // 1. READ: Lấy toàn bộ danh sách sản phẩm kèm thông tin Nhóm hàng (Category) và Thương hiệu (Brand)
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int? categoryId = null)
+        public async Task<IActionResult> GetAll([FromQuery] int? categoryId = null, [FromQuery] int? brandId = null)
         {
             var query = _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -30,11 +63,17 @@ namespace MiniSupermarket.API.Controllers
                 query = query.Where(p => p.CategoryId == categoryId.Value);
             }
 
+            if (brandId.HasValue && brandId.Value > 0)
+            {
+                query = query.Where(p => p.BrandId == brandId.Value);
+            }
+
             var products = await query
                 .OrderBy(p => p.ProductId)
                 .ToListAsync();
 
-            return Ok(products);
+            var dtoList = products.Select(MapToDto).ToList();
+            return Ok(dtoList);
         }
 
         // BƯỚC 1.2 & BÀI TẬP 6.2 (BUỔI 6): API Tìm kiếm kết hợp Phân trang và Lọc danh mục (LINQ Nâng cao)
@@ -42,38 +81,44 @@ namespace MiniSupermarket.API.Controllers
         public async Task<IActionResult> GetPagedProducts(
             [FromQuery] string? keyword,
             [FromQuery] int? categoryId,
+            [FromQuery] int? brandId,
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 5)
         {
             if (pageNumber < 1) pageNumber = 1;
             if (pageSize < 1) pageSize = 5;
 
-            // 1. Khởi tạo câu truy vấn IQueryable (Chưa thực thi xuống SQL ngay)
-            // Sử dụng Include để JOIN lấy tên Category, AsNoTracking để tối ưu tốc độ đọc
+            // 1. Khởi tạo câu truy vấn IQueryable (Sử dụng Include để JOIN lấy Category & Brand, AsNoTracking tối ưu RAM)
             var query = _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .AsNoTracking()
                 .AsQueryable();
 
-            // 2. Nếu người dùng có nhập từ khóa tìm kiếm -> Nối thêm mệnh đề WHERE
+            // 2. Tìm kiếm tên sản phẩm gần đúng (.Contains()) hoặc mã vạch (Tiêu chí 24)
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 string kw = keyword.Trim().ToLower();
-                query = query.Where(p => p.ProductName.ToLower().Contains(kw) || p.Barcode.Contains(kw));
+                query = query.Where(p => p.ProductName.ToLower().Contains(kw) || p.Barcode.ToLower().Contains(kw));
             }
 
-            // Bài tập 6.2: Nếu có chọn danh mục cần lọc (categoryId > 0) -> Nối thêm mệnh đề WHERE
+            // 3. Lọc theo nhóm hàng (Category)
             if (categoryId.HasValue && categoryId.Value > 0)
             {
                 query = query.Where(p => p.CategoryId == categoryId.Value);
             }
 
-            // 3. Đếm tổng số bản ghi thỏa mãn điều kiện (Để tính tổng số trang)
+            // 4. Lọc theo thương hiệu (Brand)
+            if (brandId.HasValue && brandId.Value > 0)
+            {
+                query = query.Where(p => p.BrandId == brandId.Value);
+            }
+
+            // 5. Đếm tổng số bản ghi thỏa mãn điều kiện
             int totalItems = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-            // 4. Thực hiện Phân trang (Skip & Take) và Làm phẳng dữ liệu (Select sang DTO)
-            // Lưu ý: Bắt buộc phải có OrderBy trước khi dùng Skip/Take trong EF Core
+            // 6. Thực hiện Phân trang (.Skip() & .Take() - Tiêu chí 25) và chuyển sang DTO (Tiêu chí 15)
             var items = await query
                 .OrderBy(p => p.ProductId)
                 .Skip((pageNumber - 1) * pageSize)
@@ -86,12 +131,12 @@ namespace MiniSupermarket.API.Controllers
                     Price = p.Price,
                     StockQuantity = p.StockQuantity,
                     CategoryId = p.CategoryId,
-                    // Nếu sản phẩm chưa gắn danh mục, hiển thị "Chưa phân loại"
-                    CategoryName = p.Category != null ? p.Category.CategoryName : "Chưa phân loại"
+                    CategoryName = p.Category != null ? p.Category.CategoryName : "Chưa phân loại",
+                    BrandId = p.BrandId,
+                    BrandName = p.Brand != null ? p.Brand.BrandName : "Chưa rõ thương hiệu"
                 })
-                .ToListAsync(); // Lúc này câu lệnh SQL mới thực sự được gửi xuống Database!
+                .ToListAsync();
 
-            // 5. Đóng gói kết quả trả về
             var response = new PagedResult<ProductItemDto>
             {
                 CurrentPage = pageNumber,
@@ -110,6 +155,7 @@ namespace MiniSupermarket.API.Controllers
         {
             var product = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == id);
 
@@ -117,7 +163,7 @@ namespace MiniSupermarket.API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm!" });
             }
-            return Ok(product);
+            return Ok(MapToDto(product));
         }
 
         // 3. SEARCH: Tìm kiếm sản phẩm theo tên, mã vạch hoặc lọc theo nhóm hàng
@@ -126,6 +172,7 @@ namespace MiniSupermarket.API.Controllers
         {
             var query = _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .AsNoTracking()
                 .AsQueryable();
 
@@ -141,7 +188,7 @@ namespace MiniSupermarket.API.Controllers
             }
 
             var result = await query.OrderBy(p => p.ProductId).ToListAsync();
-            return Ok(result);
+            return Ok(result.Select(MapToDto).ToList());
         }
 
         // Lấy chi tiết sản phẩm theo mã vạch
@@ -150,6 +197,7 @@ namespace MiniSupermarket.API.Controllers
         {
             var product = await _context.Products
                 .Include(p => p.Category)
+                .Include(p => p.Brand)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Barcode == barcode);
 
@@ -157,57 +205,93 @@ namespace MiniSupermarket.API.Controllers
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm!" });
             }
-            return Ok(product);
+            return Ok(MapToDto(product));
         }
 
-        // 4. CREATE: Thêm mới sản phẩm
+        // 4. CREATE: Thêm mới sản phẩm (Tiêu chí 30: Chỉ Admin hoặc Warehouse được thêm sản phẩm, Thu ngân chỉ bán hàng)
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Product newProduct)
+        [Authorize(Roles = "Admin,Warehouse")]
+        public async Task<IActionResult> Create([FromBody] ProductRequestDto dto)
         {
-            if (string.IsNullOrWhiteSpace(newProduct.Barcode) || string.IsNullOrWhiteSpace(newProduct.ProductName))
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrWhiteSpace(dto.Barcode) || string.IsNullOrWhiteSpace(dto.ProductName))
             {
                 return BadRequest(new { message = "Mã vạch và tên sản phẩm không được trống!" });
             }
 
-            if (await _context.Products.AnyAsync(p => p.Barcode == newProduct.Barcode))
+            if (dto.Price <= 0)
+            {
+                return BadRequest(new { message = "Giá bán sản phẩm phải lớn hơn 0!" });
+            }
+
+            if (await _context.Products.AnyAsync(p => p.Barcode == dto.Barcode.Trim()))
             {
                 return BadRequest(new { message = "Mã vạch này đã tồn tại trong hệ thống!" });
             }
 
-            if (newProduct.BrandId <= 0)
+            var newProduct = new Product
             {
-                newProduct.BrandId = 1; // Mặc định BrandId = 1 nếu không chọn Brand
-            }
+                Barcode = dto.Barcode.Trim(),
+                ProductName = dto.ProductName.Trim(),
+                Price = dto.Price,
+                StockQuantity = dto.StockQuantity,
+                CategoryId = dto.CategoryId > 0 ? dto.CategoryId : 1,
+                BrandId = dto.BrandId > 0 ? dto.BrandId : 1
+            };
 
             _context.Products.Add(newProduct);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetById), new { id = newProduct.ProductId }, newProduct);
+            var created = await _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Brand)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.ProductId == newProduct.ProductId);
+
+            return CreatedAtAction(nameof(GetById), new { id = newProduct.ProductId }, MapToDto(created ?? newProduct));
         }
 
         // 5. UPDATE: Cập nhật thông tin sản phẩm
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Product updateProduct)
+        [Authorize(Roles = "Admin,Warehouse")]
+        public async Task<IActionResult> Update(int id, [FromBody] ProductRequestDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var product = await _context.Products.FindAsync(id);
             if (product == null)
             {
                 return NotFound(new { message = "Không tìm thấy sản phẩm cần sửa!" });
             }
 
-            if (await _context.Products.AnyAsync(p => p.Barcode == updateProduct.Barcode && p.ProductId != id))
+            if (dto.Price <= 0)
+            {
+                return BadRequest(new { message = "Giá bán sản phẩm phải lớn hơn 0!" });
+            }
+
+            if (await _context.Products.AnyAsync(p => p.Barcode == dto.Barcode.Trim() && p.ProductId != id))
             {
                 return BadRequest(new { message = "Mã vạch cập nhật bị trùng với một sản phẩm khác!" });
             }
 
-            product.Barcode = updateProduct.Barcode;
-            product.ProductName = updateProduct.ProductName;
-            product.Price = updateProduct.Price;
-            product.StockQuantity = updateProduct.StockQuantity;
-            product.CategoryId = updateProduct.CategoryId;
-            if (updateProduct.BrandId > 0)
+            product.Barcode = dto.Barcode.Trim();
+            product.ProductName = dto.ProductName.Trim();
+            product.Price = dto.Price;
+            product.StockQuantity = dto.StockQuantity;
+            if (dto.CategoryId > 0)
             {
-                product.BrandId = updateProduct.BrandId;
+                product.CategoryId = dto.CategoryId;
+            }
+            if (dto.BrandId > 0)
+            {
+                product.BrandId = dto.BrandId;
             }
 
             await _context.SaveChangesAsync();
@@ -217,6 +301,7 @@ namespace MiniSupermarket.API.Controllers
 
         // 6. DELETE: Xóa sản phẩm theo ID
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin,Warehouse")]
         public async Task<IActionResult> Delete(int id)
         {
             var product = await _context.Products.FindAsync(id);

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Models;
 
 namespace MiniSupermarket.API.Data
@@ -9,6 +9,7 @@ namespace MiniSupermarket.API.Data
         {
         }
 
+        // Khai báo đầy đủ các DbSet ánh xạ bảng CSDL (Tiêu chí 18 & 19)
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Customer> Customers { get; set; }
@@ -22,22 +23,83 @@ namespace MiniSupermarket.API.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. DỮ LIỆU MẪU CHO BẢNG ROLE (Sửa lỗi Foreign Key)
+            // =====================================================================
+            // CẤU HÌNH QUAN HỆ KHÓA NGOẠI (1 - N) BẰNG FLUENT API (TIÊU CHÍ 19)
+            // =====================================================================
+
+            // 1. Quan hệ 1 - N: Category (1) -> Products (N)
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Category)
+                .WithMany(c => c.Products)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 2. Quan hệ 1 - N: Brand (1) -> Products (N)
+            modelBuilder.Entity<Product>()
+                .HasOne(p => p.Brand)
+                .WithMany(b => b.Products)
+                .HasForeignKey(p => p.BrandId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 3. Quan hệ 1 - N: Role (1) -> Users (N)
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Role)
+                .WithMany(r => r.Users)
+                .HasForeignKey(u => u.RoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 4. Quan hệ 1 - N: Customer (1) -> Orders (N)
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Customer)
+                .WithMany(c => c.Orders)
+                .HasForeignKey(o => o.CustomerId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // 5. Quan hệ 1 - N: User / Cashier (1) -> Orders (N)
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Cashier)
+                .WithMany(u => u.Orders)
+                .HasForeignKey(o => o.CashierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // 6. Quan hệ 1 - N: Order (1) -> OrderItems / OrderDetails (N)
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Order)
+                .WithMany(o => o.Items)
+                .HasForeignKey(oi => oi.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // 7. Quan hệ 1 - N: Product (1) -> OrderItems / OrderDetails (N)
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Product)
+                .WithMany(p => p.OrderItems)
+                .HasForeignKey(oi => oi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // =====================================================================
+            // NẠP DỮ LIỆU MẪU (SEED DATA - TIÊU CHÍ 22)
+            // =====================================================================
+
+            // 1. DỮ LIỆU MẪU BẢNG ROLES
             modelBuilder.Entity<Role>().HasData(
                 new Role { RoleId = 1, RoleName = "ADMIN" },
                 new Role { RoleId = 2, RoleName = "WAREHOUSE" },
                 new Role { RoleId = 3, RoleName = "CASHIER" }
             );
 
-            // 2. CÁC BẢNG KHÁC
+            // 2. DỮ LIỆU MẪU BẢNG BRANDS (8 Thương hiệu)
             modelBuilder.Entity<Brand>().HasData(
                 new Brand { BrandId = 1, BrandName = "Xiaomi", Description = "Hệ sinh thái nhà thông minh Xiaomi Mijia" },
                 new Brand { BrandId = 2, BrandName = "Tuya Smart", Description = "Nền tảng IoT Tuya toàn cầu" },
                 new Brand { BrandId = 3, BrandName = "Philips", Description = "Chuyên các thiết bị chiếu sáng thông minh Philips Hue" },
                 new Brand { BrandId = 4, BrandName = "Aqara", Description = "Thương hiệu cao cấp thuộc hệ sinh thái Apple HomeKit" },
-                new Brand { BrandId = 5, BrandName = "Amazon", Description = "Thiết bị loa và màn hình thông minh Alexa" }
+                new Brand { BrandId = 5, BrandName = "Amazon", Description = "Thiết bị loa và màn hình thông minh Alexa" },
+                new Brand { BrandId = 6, BrandName = "Orion", Description = "Thương hiệu bánh kẹo và thực phẩm đóng gói Orion" },
+                new Brand { BrandId = 7, BrandName = "Coca-Cola", Description = "Thương hiệu nước giải khát toàn cầu" },
+                new Brand { BrandId = 8, BrandName = "Samsung", Description = "Thiết bị điện tử và gia dụng thông minh Samsung SmartThings" }
             );
 
+            // 3. DỮ LIỆU MẪU BẢNG CATEGORIES (15 Nhóm hàng)
             modelBuilder.Entity<Category>().HasData(
                 new Category { CategoryId = 1, CategoryName = "Chiếu sáng thông minh", Description = "Bóng đèn thông minh, dây LED, đèn cảm ứng" },
                 new Category { CategoryId = 2, CategoryName = "An ninh & Camera", Description = "Camera giám sát trong/ngoài trời, chuông cửa màn hình" },
@@ -56,6 +118,7 @@ namespace MiniSupermarket.API.Data
                 new Category { CategoryId = 15, CategoryName = "Phụ kiện Smart Home", Description = "Pin, dây cáp, remote, bộ chuyển đổi tín hiệu" }
             );
 
+            // 4. DỮ LIỆU MẪU BẢNG CUSTOMERS (15 Khách hàng)
             modelBuilder.Entity<Customer>().HasData(
                 new Customer { CustomerId = 1, CustomerName = "Nguyễn Văn A", PhoneNumber = "0901122334", Address = "25 Nguyễn Huệ, Quận 1, TP.HCM", RewardPoints = 1500, MembershipRank = "Vàng" },
                 new Customer { CustomerId = 2, CustomerName = "Trần Thị B", PhoneNumber = "0918877665", Address = "118 Võ Văn Tần, Quận 3, TP.HCM", RewardPoints = 500, MembershipRank = "Bạc" },
@@ -71,10 +134,16 @@ namespace MiniSupermarket.API.Data
                 new Customer { CustomerId = 12, CustomerName = "Phan Thị M", PhoneNumber = "0986789012", Address = "234 Lê Văn Khương, Quận 12, TP.HCM", RewardPoints = 700, MembershipRank = "Bạc" },
                 new Customer { CustomerId = 13, CustomerName = "Lý Văn N", PhoneNumber = "0907890123", Address = "57 Lũy Bán Bích, Quận Tân Phú, TP.HCM", RewardPoints = 5000, MembershipRank = "Kim Cương" },
                 new Customer { CustomerId = 14, CustomerName = "Huỳnh Thị P", PhoneNumber = "0918901234", Address = "321 Tỉnh Lộ 10, Quận Bình Tân, TP.HCM", RewardPoints = 350, MembershipRank = "Chuẩn" },
-                new Customer { CustomerId = 15, CustomerName = "Mai Văn Q", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
+                new Customer { CustomerId = 15, CustomerName = "Mai Văn Q (Khách vãng lai)", PhoneNumber = "0989012345", Address = "78 Nguyễn Hữu Trí, Huyện Bình Chánh, TP.HCM", RewardPoints = 2600, MembershipRank = "Vàng" }
             );
 
+            // 5. DỮ LIỆU MẪU BẢNG PRODUCTS (20 Sản phẩm đầy đủ khóa ngoại CategoryId & BrandId)
             modelBuilder.Entity<Product>().HasData(
+                new Product { ProductId = 1, Barcode = "893456789001", ProductName = "Snack Khoai Tây O'Star Gói 60g", Price = 12500m, StockQuantity = 150, CategoryId = 7, BrandId = 6 },
+                new Product { ProductId = 2, Barcode = "893456789002", ProductName = "Bánh Quy Bơ Danisa Hộp Thiếc 454g", Price = 135000m, StockQuantity = 40, CategoryId = 7, BrandId = 6 },
+                new Product { ProductId = 3, Barcode = "893456789003", ProductName = "Kẹo Dẻo Chupa Chups Hương Trái Cây", Price = 15000m, StockQuantity = 120, CategoryId = 7, BrandId = 6 },
+                new Product { ProductId = 4, Barcode = "893456789004", ProductName = "Bánh Chocopie Orion Hộp 12 Cái", Price = 54000m, StockQuantity = 60, CategoryId = 7, BrandId = 6 },
+                new Product { ProductId = 5, Barcode = "893456789005", ProductName = "Nước Ngọt Coca Cola Lon 320ml", Price = 10000m, StockQuantity = 320, CategoryId = 7, BrandId = 7 },
                 new Product { ProductId = 16, Barcode = "SMH000016", ProductName = "Dây LED thông minh RGB trang trí phòng", Price = 450000m, StockQuantity = 100, CategoryId = 1, BrandId = 3 },
                 new Product { ProductId = 17, Barcode = "SMH000017", ProductName = "Chuông cửa màn hình thông minh Ring", Price = 2500000m, StockQuantity = 30, CategoryId = 2, BrandId = 5 },
                 new Product { ProductId = 18, Barcode = "SMH000018", ProductName = "Khóa cửa thẻ từ khách sạn Tuya", Price = 1800000m, StockQuantity = 50, CategoryId = 3, BrandId = 2 },
@@ -92,44 +161,7 @@ namespace MiniSupermarket.API.Data
                 new Product { ProductId = 30, Barcode = "SMH000030", ProductName = "Cảm biến nhiệt độ và độ ẩm phòng", Price = 120000m, StockQuantity = 200, CategoryId = 15, BrandId = 4 }
             );
 
-            modelBuilder.Entity<Order>().HasData(
-     new Order { OrderId = 6, OrderCode = "HD00006", Subtotal = 700000m, Discount = 0m, Total = 700000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 8, 15, 0), CustomerId = 1, CashierId = 8 },
-     new Order { OrderId = 7, OrderCode = "HD00007", Subtotal = 2500000m, Discount = 100000m, Total = 2400000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 9, 20, 0), CustomerId = 2, CashierId = 9 },
-     new Order { OrderId = 8, OrderCode = "HD00008", Subtotal = 1800000m, Discount = 0m, Total = 1800000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 10, 10, 0), CustomerId = 3, CashierId = 10 },
-     new Order { OrderId = 9, OrderCode = "HD00009", Subtotal = 500000m, Discount = 0m, Total = 500000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 11, 5, 0), CustomerId = 4, CashierId = 11 },
-     new Order { OrderId = 10, OrderCode = "HD00010", Subtotal = 2100000m, Discount = 100000m, Total = 2000000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 13, 15, 0), CustomerId = 5, CashierId = 12 },
-     new Order { OrderId = 11, OrderCode = "HD00011", Subtotal = 1200000m, Discount = 0m, Total = 1200000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 14, 0, 0), CustomerId = 6, CashierId = 13 },
-     new Order { OrderId = 12, OrderCode = "HD00012", Subtotal = 3500000m, Discount = 200000m, Total = 3300000m, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 15, 25, 0), CustomerId = 7, CashierId = 14 },
-     new Order { OrderId = 13, OrderCode = "HD00013", Subtotal = 650000m, Discount = 0m, Total = 650000m, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 16, 10, 0), CustomerId = 8, CashierId = 15 },
-     new Order { OrderId = 14, OrderCode = "HD00014", Subtotal = 1450000m, Discount = 0m, Total = 1450000m, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 17, 30, 0), CustomerId = 9, CashierId = 8 },
-     new Order { OrderId = 15, OrderCode = "HD00015", Subtotal = 2200000m, Discount = 0m, Total = 2200000m, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 19, 0, 0), CustomerId = 10, CashierId = 9 }
- );
-
-            modelBuilder.Entity<OrderItem>().HasData(
-     new OrderItem { OrderItemId = 11, OrderId = 6, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
-     new OrderItem { OrderItemId = 12, OrderId = 6, ProductId = 20, Quantity = 1, UnitPrice = 250000m, LineTotal = 250000m },
-
-     new OrderItem { OrderItemId = 13, OrderId = 7, ProductId = 17, Quantity = 1, UnitPrice = 2500000m, LineTotal = 2500000m },
-
-     new OrderItem { OrderItemId = 14, OrderId = 8, ProductId = 18, Quantity = 1, UnitPrice = 1800000m, LineTotal = 1800000m },
-
-     new OrderItem { OrderItemId = 15, OrderId = 9, ProductId = 20, Quantity = 2, UnitPrice = 250000m, LineTotal = 500000m },
-
-     new OrderItem { OrderItemId = 16, OrderId = 10, ProductId = 21, Quantity = 1, UnitPrice = 2100000m, LineTotal = 2100000m },
-
-     new OrderItem { OrderItemId = 17, OrderId = 11, ProductId = 24, Quantity = 1, UnitPrice = 550000m, LineTotal = 550000m },
-     new OrderItem { OrderItemId = 18, OrderId = 11, ProductId = 30, Quantity = 1, UnitPrice = 120000m, LineTotal = 120000m },
-     new OrderItem { OrderItemId = 19, OrderId = 11, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
-
-     new OrderItem { OrderItemId = 20, OrderId = 12, ProductId = 22, Quantity = 1, UnitPrice = 3500000m, LineTotal = 3500000m },
-
-     new OrderItem { OrderItemId = 21, OrderId = 13, ProductId = 25, Quantity = 1, UnitPrice = 650000m, LineTotal = 650000m },
-
-     new OrderItem { OrderItemId = 22, OrderId = 14, ProductId = 28, Quantity = 1, UnitPrice = 1450000m, LineTotal = 1450000m },
-
-     new OrderItem { OrderItemId = 23, OrderId = 15, ProductId = 27, Quantity = 1, UnitPrice = 2200000m, LineTotal = 2200000m }
- );
-
+            // 6. DỮ LIỆU MẪU BẢNG USERS (15 Nhân viên: 3 Admin, 4 Thủ kho, 8 Thu ngân)
             modelBuilder.Entity<User>().HasData(
                 new User { UserId = 1, Username = "admin01", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Nguyễn Văn Admin", Email = "admin01@gmail.com", Phone = "0901000001", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 8, 0, 0), RoleId = 1 },
                 new User { UserId = 2, Username = "admin02", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Trần Thị Admin", Email = "admin02@gmail.com", Phone = "0901000002", IsActive = true, CreatedAt = new DateTime(2026, 1, 2, 8, 0, 0), RoleId = 1 },
@@ -146,6 +178,37 @@ namespace MiniSupermarket.API.Data
                 new User { UserId = 13, Username = "cashier06", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Đỗ Minh Tâm", Email = "cashier06@gmail.com", Phone = "0901000013", IsActive = true, CreatedAt = new DateTime(2026, 1, 13, 8, 0, 0), RoleId = 3 },
                 new User { UserId = 14, Username = "cashier07", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Huỳnh Văn Phúc", Email = "cashier07@gmail.com", Phone = "0901000014", IsActive = true, CreatedAt = new DateTime(2026, 1, 14, 8, 0, 0), RoleId = 3 },
                 new User { UserId = 15, Username = "cashier08", PasswordHash = "$2a$11$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy", FullName = "Mai Thị Thu", Email = "cashier08@gmail.com", Phone = "0901000015", IsActive = true, CreatedAt = new DateTime(2026, 1, 15, 8, 0, 0), RoleId = 3 }
+            );
+
+            // 7. DỮ LIỆU MẪU BẢNG ORDERS (10 Hóa đơn đầy đủ liên kết CustomerId & CashierId)
+            modelBuilder.Entity<Order>().HasData(
+                new Order { OrderId = 6, OrderCode = "HD00006", Subtotal = 700000m, Discount = 0m, Total = 700000m, FinalAmount = 700000m, TotalItems = 2, RewardPoints = 70, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 8, 15, 0), CreatedDate = new DateTime(2026, 10, 15, 8, 15, 0), CashierUsername = "cashier01", CustomerId = 1, CashierId = 8 },
+                new Order { OrderId = 7, OrderCode = "HD00007", Subtotal = 2500000m, Discount = 100000m, Total = 2400000m, FinalAmount = 2400000m, TotalItems = 1, RewardPoints = 240, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 9, 20, 0), CreatedDate = new DateTime(2026, 10, 15, 9, 20, 0), CashierUsername = "cashier02", CustomerId = 2, CashierId = 9 },
+                new Order { OrderId = 8, OrderCode = "HD00008", Subtotal = 1800000m, Discount = 0m, Total = 1800000m, FinalAmount = 1800000m, TotalItems = 1, RewardPoints = 180, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 10, 10, 0), CreatedDate = new DateTime(2026, 10, 15, 10, 10, 0), CashierUsername = "cashier03", CustomerId = 3, CashierId = 10 },
+                new Order { OrderId = 9, OrderCode = "HD00009", Subtotal = 500000m, Discount = 0m, Total = 500000m, FinalAmount = 500000m, TotalItems = 2, RewardPoints = 50, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 11, 5, 0), CreatedDate = new DateTime(2026, 10, 15, 11, 5, 0), CashierUsername = "cashier04", CustomerId = 4, CashierId = 11 },
+                new Order { OrderId = 10, OrderCode = "HD00010", Subtotal = 2100000m, Discount = 100000m, Total = 2000000m, FinalAmount = 2000000m, TotalItems = 1, RewardPoints = 200, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 13, 15, 0), CreatedDate = new DateTime(2026, 10, 15, 13, 15, 0), CashierUsername = "cashier05", CustomerId = 5, CashierId = 12 },
+                new Order { OrderId = 11, OrderCode = "HD00011", Subtotal = 1120000m, Discount = 0m, Total = 1120000m, FinalAmount = 1120000m, TotalItems = 3, RewardPoints = 112, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 14, 0, 0), CreatedDate = new DateTime(2026, 10, 15, 14, 0, 0), CashierUsername = "cashier06", CustomerId = 6, CashierId = 13 },
+                new Order { OrderId = 12, OrderCode = "HD00012", Subtotal = 3500000m, Discount = 200000m, Total = 3300000m, FinalAmount = 3300000m, TotalItems = 1, RewardPoints = 330, PaymentMethod = "CARD", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 15, 25, 0), CreatedDate = new DateTime(2026, 10, 15, 15, 25, 0), CashierUsername = "cashier07", CustomerId = 7, CashierId = 14 },
+                new Order { OrderId = 13, OrderCode = "HD00013", Subtotal = 650000m, Discount = 0m, Total = 650000m, FinalAmount = 650000m, TotalItems = 1, RewardPoints = 65, PaymentMethod = "MOMO", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 16, 10, 0), CreatedDate = new DateTime(2026, 10, 15, 16, 10, 0), CashierUsername = "cashier08", CustomerId = 8, CashierId = 15 },
+                new Order { OrderId = 14, OrderCode = "HD00014", Subtotal = 1450000m, Discount = 0m, Total = 1450000m, FinalAmount = 1450000m, TotalItems = 1, RewardPoints = 145, PaymentMethod = "CASH", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 17, 30, 0), CreatedDate = new DateTime(2026, 10, 15, 17, 30, 0), CashierUsername = "cashier01", CustomerId = 9, CashierId = 8 },
+                new Order { OrderId = 15, OrderCode = "HD00015", Subtotal = 2200000m, Discount = 0m, Total = 2200000m, FinalAmount = 2200000m, TotalItems = 1, RewardPoints = 220, PaymentMethod = "BANK_TRANSFER", Status = "PAID", CreatedAt = new DateTime(2026, 10, 15, 19, 0, 0), CreatedDate = new DateTime(2026, 10, 15, 19, 0, 0), CashierUsername = "cashier02", CustomerId = 10, CashierId = 9 }
+            );
+
+            // 8. DỮ LIỆU MẪU BẢNG ORDERITEMS (13 Chi tiết hóa đơn liên kết OrderId & ProductId)
+            modelBuilder.Entity<OrderItem>().HasData(
+                new OrderItem { OrderItemId = 11, OrderId = 6, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
+                new OrderItem { OrderItemId = 12, OrderId = 6, ProductId = 20, Quantity = 1, UnitPrice = 250000m, LineTotal = 250000m },
+                new OrderItem { OrderItemId = 13, OrderId = 7, ProductId = 17, Quantity = 1, UnitPrice = 2500000m, LineTotal = 2500000m },
+                new OrderItem { OrderItemId = 14, OrderId = 8, ProductId = 18, Quantity = 1, UnitPrice = 1800000m, LineTotal = 1800000m },
+                new OrderItem { OrderItemId = 15, OrderId = 9, ProductId = 20, Quantity = 2, UnitPrice = 250000m, LineTotal = 500000m },
+                new OrderItem { OrderItemId = 16, OrderId = 10, ProductId = 21, Quantity = 1, UnitPrice = 2100000m, LineTotal = 2100000m },
+                new OrderItem { OrderItemId = 17, OrderId = 11, ProductId = 24, Quantity = 1, UnitPrice = 550000m, LineTotal = 550000m },
+                new OrderItem { OrderItemId = 18, OrderId = 11, ProductId = 30, Quantity = 1, UnitPrice = 120000m, LineTotal = 120000m },
+                new OrderItem { OrderItemId = 19, OrderId = 11, ProductId = 16, Quantity = 1, UnitPrice = 450000m, LineTotal = 450000m },
+                new OrderItem { OrderItemId = 20, OrderId = 12, ProductId = 22, Quantity = 1, UnitPrice = 3500000m, LineTotal = 3500000m },
+                new OrderItem { OrderItemId = 21, OrderId = 13, ProductId = 25, Quantity = 1, UnitPrice = 650000m, LineTotal = 650000m },
+                new OrderItem { OrderItemId = 22, OrderId = 14, ProductId = 28, Quantity = 1, UnitPrice = 1450000m, LineTotal = 1450000m },
+                new OrderItem { OrderItemId = 23, OrderId = 15, ProductId = 27, Quantity = 1, UnitPrice = 2200000m, LineTotal = 2200000m }
             );
         }
     }

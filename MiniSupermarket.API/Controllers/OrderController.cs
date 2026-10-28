@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MiniSupermarket.API.Data;
@@ -7,6 +8,7 @@ namespace MiniSupermarket.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class OrdersController : ControllerBase
     {
         private readonly SupermarketDbContext _context;
@@ -16,15 +18,62 @@ namespace MiniSupermarket.API.Controllers
             _context = context;
         }
 
+        private static OrderResponseDto MapOrderToDto(Order o)
+        {
+            var detailDtos = o.Items.Select(i => new OrderDetailItemDto
+            {
+                OrderItemId = i.OrderItemId,
+                OrderDetailId = i.OrderItemId,
+                OrderId = i.OrderId,
+                ProductId = i.ProductId,
+                ProductName = i.Product != null ? i.Product.ProductName : $"Sản phẩm #{i.ProductId}",
+                Barcode = i.Product != null ? i.Product.Barcode : string.Empty,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                LineTotal = i.LineTotal
+            }).ToList();
+
+            return new OrderResponseDto
+            {
+                OrderId = o.OrderId,
+                OrderCode = o.OrderCode,
+                Subtotal = o.Subtotal,
+                Discount = o.Discount,
+                Total = o.Total,
+                TotalAmount = o.Total,
+                FinalAmount = o.FinalAmount > 0 ? o.FinalAmount : o.Total,
+                TotalItems = o.TotalItems > 0 ? o.TotalItems : detailDtos.Sum(d => d.Quantity),
+                RewardPoints = o.RewardPoints,
+                PaymentMethod = o.PaymentMethod,
+                Status = o.Status,
+                CreatedAt = o.CreatedAt,
+                CreatedDate = o.CreatedDate,
+                OrderDate = o.CreatedAt,
+                CustomerId = o.CustomerId,
+                CustomerName = o.Customer != null ? o.Customer.CustomerName : "Khách vãng lai",
+                CashierId = o.CashierId,
+                CashierUsername = !string.IsNullOrWhiteSpace(o.CashierUsername)
+                    ? o.CashierUsername
+                    : (o.Cashier?.Username ?? $"cashier#{o.CashierId}"),
+                CashierFullName = o.Cashier != null ? o.Cashier.FullName : "Thu ngân ca trực",
+                Items = detailDtos,
+                OrderDetails = detailDtos
+            };
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
             var orders = await _context.Orders
                 .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
                 .Include(o => o.Customer)
+                .Include(o => o.Cashier)
                 .AsNoTracking()
+                .OrderByDescending(o => o.CreatedAt)
                 .ToListAsync();
-            return Ok(orders);
+
+            return Ok(orders.Select(MapOrderToDto).ToList());
         }
 
         [HttpGet("{id}")]
@@ -32,7 +81,9 @@ namespace MiniSupermarket.API.Controllers
         {
             var order = await _context.Orders
                 .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
                 .Include(o => o.Customer)
+                .Include(o => o.Cashier)
                 .AsNoTracking()
                 .FirstOrDefaultAsync(o => o.OrderId == id);
 
@@ -41,10 +92,11 @@ namespace MiniSupermarket.API.Controllers
                 return NotFound(new { message = "Không tìm thấy đơn hàng!" });
             }
 
-            return Ok(order);
+            return Ok(MapOrderToDto(order));
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin,Cashier")]
         public async Task<IActionResult> Create([FromBody] Order newOrder)
         {
             if (newOrder.Items == null || newOrder.Items.Count == 0)
@@ -58,20 +110,26 @@ namespace MiniSupermarket.API.Controllers
             }
 
             newOrder.CreatedAt = DateTime.UtcNow;
-            
+            newOrder.CreatedDate = DateTime.Now;
+
             decimal subtotal = 0;
+            int totalQty = 0;
             foreach (var item in newOrder.Items)
             {
                 item.LineTotal = item.Quantity * item.UnitPrice;
                 subtotal += item.LineTotal;
+                totalQty += item.Quantity;
             }
 
             newOrder.Subtotal = subtotal;
+            newOrder.TotalItems = totalQty;
 
             if (newOrder.Discount < 0) newOrder.Discount = 0;
             if (newOrder.Discount > newOrder.Subtotal) newOrder.Discount = newOrder.Subtotal;
 
             newOrder.Total = newOrder.Subtotal - newOrder.Discount;
+            newOrder.FinalAmount = newOrder.Total;
+            newOrder.RewardPoints = (int)(newOrder.Total / 10000);
 
             if (string.IsNullOrWhiteSpace(newOrder.PaymentMethod))
                 newOrder.PaymentMethod = "CASH";
@@ -82,21 +140,29 @@ namespace MiniSupermarket.API.Controllers
             _context.Orders.Add(newOrder);
             await _context.SaveChangesAsync();
 
-            // Cập nhật lại mã đơn hàng sau khi có OrderId
             if (string.IsNullOrWhiteSpace(newOrder.OrderCode))
             {
                 newOrder.OrderCode = $"HD{newOrder.OrderId:D5}";
                 await _context.SaveChangesAsync();
             }
 
+            var created = await _context.Orders
+                .Include(o => o.Items)
+                    .ThenInclude(i => i.Product)
+                .Include(o => o.Customer)
+                .Include(o => o.Cashier)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(o => o.OrderId == newOrder.OrderId);
+
             return CreatedAtAction(
                 nameof(GetById),
                 new { id = newOrder.OrderId },
-                newOrder
+                MapOrderToDto(created ?? newOrder)
             );
         }
 
         [HttpPut("{id}/status")]
+        [Authorize(Roles = "Admin,Cashier")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
         {
             var order = await _context.Orders.FindAsync(id);
@@ -118,6 +184,7 @@ namespace MiniSupermarket.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             var order = await _context.Orders.FindAsync(id);

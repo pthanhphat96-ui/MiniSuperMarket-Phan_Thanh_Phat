@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
@@ -12,16 +12,16 @@ namespace MiniSupermarket.API.Models
         public int UserId { get; set; }
 
         [Required(ErrorMessage = "Tên đăng nhập không được để trống")]
-        [StringLength(50)]
+        [StringLength(50, ErrorMessage = "Tên đăng nhập không vượt quá 50 ký tự")]
         public string Username { get; set; } = string.Empty;
 
         [Required]
         [StringLength(255)]
         [JsonIgnore]                                       // Không bao giờ trả hash mật khẩu ra API
-        public string PasswordHash { get; set; } = string.Empty;   // BCrypt hash
+        public string PasswordHash { get; set; } = string.Empty;   // BCrypt / SHA256 hash
 
         [Required(ErrorMessage = "Họ tên không được để trống")]
-        [StringLength(100)]
+        [StringLength(100, ErrorMessage = "Họ tên không vượt quá 100 ký tự")]
         public string FullName { get; set; } = string.Empty;
 
         [StringLength(100)]
@@ -35,8 +35,13 @@ namespace MiniSupermarket.API.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // Quan hệ N-1: Nhiều User thuộc 1 Role
         public int RoleId { get; set; }
         [ForeignKey("RoleId")]
         public virtual Role? Role { get; set; }
+
+        // Quan hệ 1-N: 1 Nhân viên thu ngân (User) lập nhiều Hóa đơn (Orders)
+        [JsonIgnore]
+        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }
